@@ -2,7 +2,8 @@
 package = "checks"
 version = "1.0-1"
 source = {
-    url = "http://github.com/fab13n/checks/raw/master/checks-1.0-1.tar.gz"
+    url = "https://github.com/fab13n/checks/raw/master/checks-1.0-1.tar.gz",
+    dir = "checks",
 }
 
 description = {
