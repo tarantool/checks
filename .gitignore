@@ -3,12 +3,11 @@
 .*
 *~
 *.swp*
-
 build/
 CMakeCache.txt
 CMakeFiles/
 Makefile
 Testing/
-*.cmake
+cmake_install.cmake
 *.so
 *.dylib
