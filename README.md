@@ -7,20 +7,24 @@ unobtrusive  way.
 `checks (type_1, ..., type_n)`, when called directly inside function
 `f`, checks that `f`'s 1st argument conforms to `type_1`, that its 2nd
 argument conforms to `type_2`, etc. until `type_n`. Type specifiers
-are strings, and if the arguments passed to `f` don't conform to their
-specification, a proper error message is produced, pinpointing the
-call to `f` as the faulty expression.
+are strings or tables, and if the arguments passed
+to `f` don't conform to their specification, a proper error message is produced,
+pinpointing the call to `f` as the faulty expression.
 
-Each type description `type_n` must be a string, and can describe:
+Each type description `type_n` must be a string or table, and can describe:
 
-* the Lua type of an object, such as `"table"`, `"number"` etc.;
+1. (if string) the Lua type of an object, such as `"table"`, `"number"` etc.;
 
-* an arbitrary name, which would be stored in the `__type` field of
-  the argument's metatable;
+2. (if string) an arbitrary name, which would be stored in the `__type` field of
+    the argument's metatable;
 
-* a type-checking function, which would be stored in the `checkers`
-  global table. This table uses type names as keys, test functions
-  returning Booleans as keys.
+3. (if string) a type-checking function, which would be stored in the `checkers`
+    global table. This table uses type names as keys, test functions
+    returning Booleans as keys.
+
+4. (if table) arbitraty hierarchy (table) of types. Types are specified on leaf
+    nodes of the table and must of string type. These strings (representing
+    types) can describe any of above types (1, 2, 3).
 
 Moreover, types can be prefixed with a `"?"`, which makes them
 optional. For instance, `"?table"` accepts tables as well as `nil`
@@ -96,8 +100,37 @@ end
 function take_anything_followed_by_a_number()
   checks("?", "number")
 end
--- Catch some incorrect arguments passed to the function --
 
+function take_option_argument(opts)
+  checks {
+    number_or_string = 'number|string',
+    optional_socket = '?socket',
+    table = {
+      number = 'number',
+      optional_port = '?port'
+    }
+  }
+end
+
+-- should work (didn't provide opts.optional_socket)
+take_option_argument {
+  number_or_string = 3,
+  table = {
+    number = -1,
+    port = 1024
+  }
+}
+
+-- should work (didn't provide opts.table.number)
+take_option_argument {
+  number_or_string = 'abacaba',
+  optional_socket = asocket,
+  table = {
+    number = 4.5
+  }
+}
+
+-- Catch some incorrect arguments passed to the function --
 function must_fail(...)
   assert (not pcall (take_socket_then_port_then_maybe_string, ...))
 end
@@ -105,6 +138,17 @@ end
 must_fail ({ }, 1024, "string")      -- 1st argument isn't a socket
 must_fail (asocket, -1, "string")   -- port number must be 0-0xffff
 must_fail (asocket, 1024, { })    -- 3rd argument cannot be a table
+
+-- opts.number_or_string must be provided
+must_fail (take_option_argument, {table = {number = 0}})
+
+-- provided table instead of number of string
+must_fail (take_option_argument, {
+  number_or_string = {},
+  table = {
+    number = 0
+  }
+})
 ```
 
 ## Credits

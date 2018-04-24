@@ -1,9 +1,9 @@
 --*-lua-*-
 package = "checks"
-version = "1.0.0-1"
+version = "1.0.1-1"
 source = {
     url = 'git://github.com/tarantool/checks.git',
-    tag = "1.0.0",
+    tag = "1.0.1",
 }
 
 description = {
@@ -22,11 +22,9 @@ dependencies = {
 }
 
 build = {
-    type = 'cmake';
-    variables = {
-        CMAKE_BUILD_TYPE="RelWithDebInfo";
-        CMAKE_INSTALL_PREFIX = "$(PREFIX)",
-        TARANTOOL_INSTALL_LIBDIR = "lib",
-        TARANTOOL_INSTALL_LUADIR = "lua",
-    };
+    type = 'builtin',
+    modules = {
+        ['checks'] = 'checks.lua',
+    }
 }
+
