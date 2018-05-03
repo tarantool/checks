@@ -111,9 +111,9 @@ end
 
 
 local function checks_error(level, i, err)
-    local info = debug.getinfo(level + 1, 'nSl')
-    local where_fmt = '%s:%d bad argument #%d to %s: '
-    return string.format(where_fmt, info.short_src, info.currentline, i, info.name) .. err
+    local info = debug.getinfo(level, 'nl')
+    local where_fmt = 'bad argument #%d to %s (%s)'
+    return string.format(where_fmt, i, info.name, err)
 end
 
 
@@ -136,7 +136,7 @@ function checks(...)
             if not ok then
                 local err = string.format('%s expected, got %s',
                     expected_types, type(checked_value))
-                error(checks_error(level, i, err))
+                error(checks_error(level, i, err), level + 1)
             end
         elseif type(expected_types) == 'table' then
             local ok, retval = xpcall(
@@ -148,7 +148,7 @@ function checks(...)
                 checked_name,
                 expected_types
             )
-            if not ok then error(retval) end
+            if not ok then error(retval, level + 1) end
 
             debug.setlocal(level, i, retval)
         else
@@ -157,3 +157,5 @@ function checks(...)
         end
     end
 end
+
+return checks

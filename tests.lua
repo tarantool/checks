@@ -6,7 +6,7 @@ test:plan(15)
 
 ------------------------------------------------------------------------------
 
-require('checks')
+local checks = require('checks')
 local function fails(func, ...)
     local params = {...}
     local ok = pcall(function()
@@ -30,7 +30,6 @@ local function foo(number, optional_string, positive_number, opt)
 end
 
 -- old functionality
-foo(3)
 test:ok(not fails(foo, 3), 'must not fail')
 test:ok(not fails(foo, 5, 'abacaba'), 'must not fail')
 test:ok(not fails(foo, 5, 'abacaba', 1), 'must not fail')
