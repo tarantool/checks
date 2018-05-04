@@ -1,5 +1,3 @@
-checkers = checkers or {}
-
 local function matches(checked_value, expected_types, is_of_type)
     if not is_of_type then
         is_of_type = function (checked_value, expected_type)
@@ -117,7 +115,7 @@ local function checks_error(level, i, err)
 end
 
 
-function checks(...)
+local function checks(...)
     local level = 2
 
     local args = {...}
@@ -158,4 +156,6 @@ function checks(...)
     end
 end
 
+_G.checks = checks
+_G.checkers = rawget(_G, 'checkers') or {}
 return checks
