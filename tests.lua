@@ -1,5 +1,6 @@
 #!/usr/bin/env tarantool
 
+require('strict').on()
 local tap = require('tap')
 local test = tap.test('utils')
 test:plan(15)
