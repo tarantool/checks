@@ -1,157 +1,103 @@
-local function matches(checked_value, expected_types, is_of_type)
-    if not is_of_type then
-        is_of_type = function (checked_value, expected_type)
-            return type(checked_value) == expected_type
-        end
-    end
-    assert(type(is_of_type) == 'function')
-
-    local start = 1
-    while true do
-        local ending = string.find(expected_types, '|', start)
-        if ending == nil then
-            -- last exp. type
-            return is_of_type(checked_value, expected_types:sub(start, -1))
-        end
-
-        local expected_type = expected_types:sub(start, ending - 1)
-        if is_of_type(checked_value, expected_type) then
-            return true
-        end
-        start = ending + 1  -- after | symbol is start of new exp. type
-    end
-    return false
-end
-
-local function is_leaf(node)
-    return type(node) == 'string'
-end
-
-local function check_string_argument(checked_value, expected_types)
+local function check_value(level, argname, value, expected_type)
     -- 1. Check for nil if type is optional.
-    local is_optional = expected_types:sub(1, 1) == '?'
-    if is_optional then
-        if checked_value == nil then
-            return true
-        end
-        expected_types = expected_types:sub(2, -1)
+    if expected_type:match('^?') and value == nil then
+        return true
+    end
+
+    local valid_types = {}
+    for typ in expected_type:gmatch('[^|?]+') do
+        valid_types[typ] = true
     end
 
     -- 2. Check real type.
-    if matches(checked_value, expected_types) then
+    if valid_types[type(value)] == true then
         return true
     end
 
     -- 3. Check for type name in metatable.
-    local mt = getmetatable(checked_value)
-    if mt and type(mt.__type) == 'string' then
-        -- pass type as first parameter (instead of value)
-        local function are_equal(checked_value, expected_type)
-            return checked_value == expected_type
-        end
-        if matches(mt.__type, expected_types, are_equal) then
-            return true
-        end
-    end
-
-    -- 4. Check for a custom typechecking function.
-    local function is_of_func_type(checked_value, expected_type)
-        local func = checkers[expected_type]
-        if type(func) ~= 'function' then return false end
-        return func(checked_value)
-    end
-    if matches(checked_value, expected_types, is_of_func_type) then
+    local mt = getmetatable(value)
+    if mt and valid_types[mt.__type] == true then
         return true
     end
 
-    return false
+    for typ, _ in pairs(valid_types) do
+        local checker = _G.checkers[typ]
+        if type(checker) == 'function' and checker(value) == true then
+            return true
+        end
+    end 
+    
+    -- 4. Nothing works, throw error
+    local info = debug.getinfo(level+1, 'nl')
+    return error(string.format(
+        'bad argument %s to %s (%s expected, got %s)',
+        argname, info.name, expected_type, type(value)
+    ), level+2)
 end
 
-
-local function validate_option(opt, helpname, check_params)
-    local fmt = 'validate_option: bad validate_option usage %s: %s expected, got %s'
-    do
-        if type(check_params) ~= 'table' and type(check_params) ~= 'string' then
-            error(string.format(fmt, 'check_params', 'table', type(check_params)))
-        end
-        if type(helpname) ~= 'string' then
-            error(string.format(fmt, 'helpname', 'string', type(helpname)))
-        end
-    end
-
-    if is_leaf(check_params) then
-        local fmt = 'validate_option: bad format %s: %s expected, got %s'
-        if not check_string_argument(opt, check_params) then
-            error(string.format(fmt, helpname, check_params.type, type(opt)))
-        end
-        return opt
-    end
-
-    opt = opt or {}
-    if type(opt) ~= 'table' then
-        local fmt = 'validate_option: %s must be table'
-        error(string.format(fmt, helpname))
-    end
-
-    for k, v in pairs(opt) do
-        local new_helpname = helpname .. '.' .. k
-        if check_params[k] == nil then
-            local fmt = 'validate_option: unexpected field %s'
-            error(string.format(fmt, new_helpname))
+local function check_table(level, argname, tbl, expected_fields)
+    for expected_key, expected_type in pairs(expected_fields) do
+        if type(expected_type) == 'string' then
+            -- do nothing
+        elseif type(expected_type) == 'table' then
+            tbl[expected_key] = tbl[expected_key] or {}
+        else
+            error(string.format(
+                'checks: argument type %s is not supported',
+                type(expected_type))
+            )
         end
     end
-    for k, v in pairs(check_params) do
-        local new_helpname = helpname .. '.' .. k
-        opt[k] = validate_option(opt[k], new_helpname, v)
+
+    for key, value in pairs(tbl) do
+        local argname = string.format('%s.%s', argname, key)
+        local expected_type = expected_fields[key]
+        if not expected_type then
+            local info = debug.getinfo(level+1, 'nl')
+            error(string.format(
+                'unexpected argument %s to %s',
+                argname, info.name
+            ), level+2)
+        elseif type(expected_type) == 'string' then
+            check_value(level+1, argname, value, expected_type)
+        elseif type(expected_type) == 'table' then
+            check_value(level+1, argname, value, '?table')
+            if value then
+                check_table(level+1, argname, value, expected_type)
+            end
+        end
     end
-    return opt
 end
-
-
-local function checks_error(level, i, err)
-    local info = debug.getinfo(level, 'nl')
-    local where_fmt = 'bad argument #%d to %s (%s)'
-    return string.format(where_fmt, i, info.name, err)
-end
-
 
 local function checks(...)
-    local level = 2
+    local arg = {...}
 
-    local args = {...}
-    if type(args[1]) == 'number' then
-        level = 1 + args[1]
-        args:remove(1)
+    local level = 1
+    if type(arg[1]) == 'number' then
+        level = arg[1]
+        arg:remove(1)
     end
+    level = level + 1 -- escape the checks level
 
-    for i = 1, #args do
-        local expected_types = args[i]
-        if not expected_types then break end
-        local checked_name, checked_value = debug.getlocal(level, i)
+    for i = 1, table.maxn(arg) do
+        local expected_type = arg[i]
+        local argname, value = debug.getlocal(level, i)
 
-        if type(expected_types) == 'string' then
-            local ok = check_string_argument(checked_value, expected_types)
-            if not ok then
-                local err = string.format('%s expected, got %s',
-                    expected_types, type(checked_value))
-                error(checks_error(level, i, err), level + 1)
-            end
-        elseif type(expected_types) == 'table' then
-            local ok, retval = xpcall(
-                validate_option,
-                function (err)
-                    return checks_error(level + 3, i, err)
-                end,
-                checked_value,
-                checked_name,
-                expected_types
-            )
-            if not ok then error(retval, level + 1) end
+        if expected_type == nil then
+            -- do not check
+        elseif type(expected_type) == 'string' then
+            check_value(level, string.format('#%d', i), value, expected_type)
 
-            debug.setlocal(level, i, retval)
+        elseif type(expected_type) == 'table' then
+            check_value(level, string.format('#%d', i), value, '?table')
+            local value = value or {}
+            check_table(level, argname, value, expected_type)
+            debug.setlocal(level, i, value)
         else
-            local fmt = 'checks: argument type %s is not supported'
-            error(string.format(fmt, type(expected_types)))
+            error(string.format(
+                'checks: argument type %s is not supported',
+                type(expected_type))
+            )
         end
     end
 end
