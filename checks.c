@@ -72,26 +72,26 @@ Usage examples
 --------------
 
      require 'checks'
-     
+
      -- Custom checker function --
      function checkers.port(p)
        return type(p)=='number' and p>0 and p<0x10000
      end
-     
+
      -- A new named type --
      socket_mt = { __type='socket' }
      asocket = setmetatable ({ }, socket_mt)
-     
+
      -- A function that checks its parameters --
      function take_socket_then_port_then_maybe_string (sock, port, str)
        checks ('socket', 'port', '?string')
      end
-     
+
      take_socket_then_port_then_maybe_string (asocket, 1024, "hello")
      take_socket_then_port_then_maybe_string (asocket, 1024)
 
      -- A couple of other parameter-checking options --
-          
+
      function take_number_or_string()
        checks("number|string")
      end
@@ -105,11 +105,11 @@ Usage examples
      end
 
      -- Catch some incorrect arguments passed to the function --
-     
+
      function must_fail(...)
        assert (not pcall (take_socket_then_port_then_maybe_string, ...))
      end
-     
+
      must_fail ({ }, 1024, "string")      -- 1st argument isn't a socket
      must_fail (asocket, -1, "string")   -- port number must be 0-0xffff
      must_fail (asocket, 1024, { })    -- 3rd argument cannot be a table
@@ -125,19 +125,17 @@ Usage examples
 
 /** Generate and throw an error.
 @function [parent=#global] error
-@param level stack level where the error must be reported
 @param narg indice of the erroneous argument
 @param expected name of the expected type
 @param got name of the type actually found
 
 @return never returns (throws a Lua error instead) */
-static int error(
-        lua_State *L, int level, int narg,
+static int error(lua_State *L, int narg,
         const char *expected, const char *got) {
     lua_Debug ar;
-    lua_getstack( L, level, & ar);
+    lua_getstack( L, 1, & ar);
     lua_getinfo( L, "n", & ar);
-    luaL_where( L, level+1);
+    luaL_where( L, 1);
     lua_pushfstring( L, " bad argument #%d to %s (%s expected, got %s)",
             narg, ar.name, expected, got);
     lua_concat( L, 2);
@@ -151,6 +149,22 @@ static int error(
     }
     printf( "\tend of error, level was %d\n\n", level);
 #endif
+
+    return lua_error( L);
+}
+
+/** Generate and throw an error.
+@function [parent=#global] error_msg
+@param message error message
+
+@return never returns (throws a Lua error instead) */
+static int error_msg(lua_State *L, const char *message) {
+    lua_Debug ar;
+    lua_getstack( L, 1, & ar);
+    lua_getinfo( L, "n", & ar);
+    luaL_where( L, 1);
+    lua_pushfstring( L, " %s to function %s", message, ar.name);
+    lua_concat( L, 2);
 
     return lua_error( L);
 }
@@ -187,7 +201,7 @@ static int matches( const char *actualType, const char *expectedTypes) {
 #	define matches( a, b) ( ! strcmp( a, b))
 #endif
 
-/*** 
+/***
 check whether the calling function's argument have the expected types.
 
 `checks( [level], t_1, ..., t_n)` causes an error if the type of
@@ -211,7 +225,9 @@ static int checks( lua_State *L) {
     /* loop for each checked argument in stack frame. */
     for( /* i already initialized. */; ! lua_isnoneornil( L, i); i++) {
         const char *expectedType = luaL_checkstring( L, i); // -
-        lua_getlocal( L, & ar, i);  // val (value whose type is checked)
+        if (!lua_getlocal( L, & ar, i)) { // val (value whose type is checked)
+            return error_msg( L, "too few arguments");
+        }
 
         /* 1. Check for nil if type is optional. */
         if( '?' == expectedType[0]) {
@@ -265,12 +281,22 @@ static int checks( lua_State *L) {
             }
             if( ! *q) { /* last possible expected type. */
                 lua_pop( L, 2);
-                return error( L, level, i, expectedType, actualType);
+                return error( L, i, expectedType, actualType);
             } else {
                 p = q+1;
             }
         } /* for each expected type */
     } /* for each i */
+
+    const char* argName = lua_getlocal( L, & ar, i);
+    if (argName) {
+        int isLuaSysArg = argName[0] == '(' ? 1 : 0;
+        lua_pop( L, 1);
+        return isLuaSysArg
+            ? 0
+            : error_msg( L, "too many arguments");
+    }
+
     return 0;
 }
 
@@ -289,7 +315,7 @@ Example
      function checkers.positive_number(x)
        return type(x)=='number' and x>0
      end
-     
+
      -- Use the `positive_number` type-checking function --
      function sqrt(x)
        checks('positive_number')
