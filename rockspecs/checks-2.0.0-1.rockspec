@@ -1,9 +1,9 @@
 --*-lua-*-
 package = "checks"
-version = "1.0.1-1"
+version = "2.0.0-1"
 source = {
     url = 'git://github.com/tarantool/checks.git',
-    tag = "1.0.1",
+    tag = "2.0.0",
 }
 
 description = {
