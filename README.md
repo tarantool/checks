@@ -17,21 +17,16 @@ pinpointing the call to `fn` as the faulty expression.
 
 ## String type qualifiers
 
-```lua
-local function fn(x)
-    checks('number')
-end
-```
-
-When the type qualifier is a string it can describe:
-
 ### Lua type
 
 The type is simply `type(arg)`, such as `'table'`, `'number'` etc.
 
 ```lua
--- fn: checks('string')
-fn('foo') -- ok
+function fn_string(x)
+    checks('string')
+end
+fn_string('foo') -- ok
+fn_string(99) -- error:  bad argument #1 to fn_string (string expected, got number)'
 ```
 
 ### Metatable type
@@ -39,9 +34,12 @@ fn('foo') -- ok
 An arbitrary name, which is stored in the `__type` field of the argument metatable
 
 ```lua
--- fn: checks('color')
+function fn_color(x)
+    checks('color')
+end
 local blue = setmetatable({0, 0, 255}, {__type = 'color'})
-fn(blue) -- ok
+fn_color(blue) -- ok
+fn_color({}) -- error: bad argument #1 to fn_color (color expected, got table)'
 ```
 
 ### A type-checking function name
@@ -51,12 +49,14 @@ This function is called with original value passed to `fn`
 and must return `true` if the value is valid.  
 
 ```lua
--- fn: checkers('positive')
+function fn_positive(x)
+    checks('positive')
+end
 function checkers.positive(p)
   return (type(p) == 'number') and (p > 0)
 end
-fn(42) -- ok
-fn(-1) -- error
+fn_positive(42) -- ok
+fn_positive(-1) -- error: bad argument #1 to fn_positive (positive expected, got number)'
 ```
 
 ### Optional type and types combination
@@ -84,28 +84,26 @@ Table keys, which are not mentioned in `checks`, are validated against `'nil'` t
 Table type qualifiers may be recursive and use tables too. 
 
 ```lua
-local function fn(options)
+function fn_opts(options)
     checks({
         my_string = '?string',
         my_number = '?number',
     })
-
-    options.my_string -- safe
 end
 
-fn({my_string = 's'}) -- ok
-fn({my_number = 101}) -- ok
-fn({my_number = 'x'}) -- error
-fn({bad_field = true}) -- error
+fn_opts({my_string = 's'}) -- ok
+fn_opts({my_number = 101}) -- ok
+fn_opts({my_number = 'x'}) -- error: bad argument options.my_number to fn_opts (?number expected, got string)'
+fn_opts({bad_field = true}) -- error: unexpected argument options.bad_field to fn_opts
 ```
 
 When the optional argument is validated with the table type qualifier,
 its value is set to an empty table. Thus it's safe to do:
 
 ```lua
-local function fn(options)
+function fn(options)
     checks({timeout = '?number'})
-    opts.timeout = opts.timeout or 5.0
+    options.timeout = options.timeout or 5.0
 end
 
 fn() -- ok
@@ -116,18 +114,18 @@ fn() -- ok
 Functions with variable number of arguments are supported:
 
 ```lua
-local function fn(arg1, ...)
+function fn_varargs(arg1, ...)
     checks('string')
 end
 
-fn('s') -- ok
-fn('s', 1) -- ok
-fn('s', {}) -- ok
-fn(42) -- error
+fn_varargs('s') -- ok
+fn_varargs('s', 1) -- ok
+fn_varargs('s', {}) -- ok
+fn_varargs(42) -- error: bad argument #1 to fn_varargs (string expected, got number)'
 ```
 
 ## Credits
 
 This library was originally a part of
-[[https://github.com/SierraWireless/luasched]]. Now a dependency for
-luacheck.
+[luasched](https://github.com/SierraWireless/luasched).
+Now it is a dependency for luacheck.
