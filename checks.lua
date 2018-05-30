@@ -45,9 +45,9 @@ local function check_table(level, argname, tbl, expected_fields)
             tbl[expected_key] = tbl[expected_key] or {}
         else
             error(string.format(
-                'checks: argument type %s is not supported',
-                type(expected_type))
-            )
+                'checks: type %q is not supported',
+                type(expected_type)
+            ), level + 1)
         end
     end
 
@@ -59,7 +59,7 @@ local function check_table(level, argname, tbl, expected_fields)
             error(string.format(
                 'unexpected argument %s to %s',
                 argname, info.name
-            ), level+2)
+            ), level + 2)
         elseif type(expected_type) == 'string' then
             check_value(level + 1, argname, value, expected_type)
         elseif type(expected_type) == 'table' then
@@ -81,12 +81,21 @@ local function checks(...)
     end
     level = level + 1 -- escape the checks level
 
-    for i = 1, table.maxn(arg) do
+    for i = 1, table.maxn(arg)+1 do
         local expected_type = arg[i]
         local argname, value = debug.getlocal(level, i)
 
-        if expected_type == nil then
-            -- do not check
+        if expected_type == nil and argname == nil then
+            break
+        elseif expected_type == nil then
+            error(string.format(
+                'checks: argument %q is not checked',
+                argname
+            ), level)
+        elseif argname == nil then
+            error(string.format(
+                'checks: excess check, absent argument'
+            ), level)
         elseif type(expected_type) == 'string' then
             check_value(level, string.format('#%d', i), value, expected_type)
 
@@ -97,9 +106,9 @@ local function checks(...)
             debug.setlocal(level, i, value)
         else
             error(string.format(
-                'checks: argument type %s is not supported',
-                type(expected_type))
-            )
+                'checks: type %q is not supported',
+                type(expected_type)
+            ), level)
         end
     end
 end

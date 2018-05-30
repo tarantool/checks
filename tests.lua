@@ -16,10 +16,6 @@ function fn_number_optstring(arg1, arg2)
     checks('number', '?string')
 end
 
-function fn_second_number(arg1, arg2)
-    checks(nil, 'number')
-end
-
 function fn_number_or_string(arg1)
     checks('number|string')
 end
@@ -65,7 +61,7 @@ local function test_err(test, code, expected_error)
     -- body
 end
 
-test:plan(37)
+test:plan(34)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -91,13 +87,6 @@ test_err(test, 'fn_number_or_string(msgpack.NULL)',
     'bad argument #1 to fn_number_or_string %(number|string expected, got cdata%)')
 test_err(test, 'fn_number_or_string(true)',
     'bad argument #1 to fn_number_or_string %(number|string expected, got boolean%)')
-
-test_err(test, 'fn_second_number(nil, 5)')
-test_err(test, 'fn_second_number("s", 5)')
-test_err(test, 'fn_second_number(100, 5)')
-test_err(test, 'fn_second_number(true, 5)')
-test_err(test, 'fn_second_number(nil, "s")',
-    'bad argument #2 to fn_second_number %(number expected, got string%)')
 
 test_err(test, 'fn_options(1)',
     'bad argument #1 to fn_options %(%?table expected, got number%)')
@@ -130,10 +119,28 @@ local function check_options(options)
 end
 check_options()
 
-test_err(test, 'checks("?string", 5)',
-    'checks: argument type number is not supported')
-test_err(test, 'checks({param = 5})',
-    'checks: argument type number is not supported')
+function fn_excess_checks(arg1)
+    checks('?number', '?string')
+end
+test_err(test, 'fn_excess_checks()',
+    'tests.lua:.+: checks: excess check, absent argument')
 
+function fn_missing_checks(arg1, arg2)
+    checks('?number')
+end
+test_err(test, 'fn_missing_checks()',
+    'tests.lua:.+: checks: argument "arg2" is not checked')
+
+function bad_check_type_1(arg1, arg2)
+    checks("?string", 5)
+end
+test_err(test, 'bad_check_type_1()',
+    'tests.lua:.+: checks: type "number" is not supported')
+
+function bad_check_type_2(arg1, arg2)
+    checks({param = 5})
+end
+test_err(test, 'bad_check_type_2()',
+    'tests.lua:.+: checks: type "number" is not supported')
 
 os.exit(test:check())
