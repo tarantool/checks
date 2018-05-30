@@ -1,6 +1,8 @@
 #!/usr/bin/env tarantool
 
 local function check_value(level, argname, value, expected_type)
+    level = level + 1 -- escape the check_value level
+
     -- 1. Check for nil if type is optional.
     if expected_type == '?' then
         return true
@@ -32,14 +34,16 @@ local function check_value(level, argname, value, expected_type)
     end
 
     -- 4. Nothing works, throw error
-    local info = debug.getinfo(level + 1, 'nl')
-    return error(string.format(
+    local info = debug.getinfo(level, 'nl')
+    error(string.format(
         'bad argument %s to %s (%s expected, got %s)',
         argname, info.name, expected_type, type(value)
     ), level)
 end
 
 local function check_table(level, argname, tbl, expected_fields)
+    level = level + 1 -- escape the check_table level
+
     for expected_key, expected_type in pairs(expected_fields) do
         if type(expected_type) == 'string' then
             -- do nothing
@@ -49,7 +53,7 @@ local function check_table(level, argname, tbl, expected_fields)
             error(string.format(
                 'checks: type %q is not supported',
                 type(expected_type)
-            ), level + 1)
+            ), level)
         end
     end
 
@@ -57,17 +61,17 @@ local function check_table(level, argname, tbl, expected_fields)
         local argname = string.format('%s.%s', argname, key)
         local expected_type = expected_fields[key]
         if not expected_type then
-            local info = debug.getinfo(level + 1, 'nl')
+            local info = debug.getinfo(level, 'nl')
             error(string.format(
                 'unexpected argument %s to %s',
                 argname, info.name
-            ), level + 1)
+            ), level)
         elseif type(expected_type) == 'string' then
-            check_value(level + 1, argname, value, expected_type)
+            check_value(level, argname, value, expected_type)
         elseif type(expected_type) == 'table' then
-            check_value(level + 1, argname, value, '?table')
+            check_value(level, argname, value, '?table')
             if value then
-                check_table(level + 1, argname, value, expected_type)
+                check_table(level, argname, value, expected_type)
             end
         end
     end
