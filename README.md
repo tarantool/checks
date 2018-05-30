@@ -4,111 +4,128 @@ This library declares a `checks()` function and a `checkers` table, which
 allow to check the parameters passed to a Lua function in a fast and
 unobtrusive  way.
 
-`checks (type_1, ..., type_n)`, when called directly inside function
-`f`, checks that `f`'s 1st argument conforms to `type_1`, that its 2nd
-argument conforms to `type_2`, etc. until `type_n`. Type specifiers
-are strings, and if the arguments passed to `f` don't conform to their
-specification, a proper error message is produced, pinpointing the
-call to `f` as the faulty expression.
+## Description
 
-Each type description `type_n` must be a string, and can describe:
+Function `checks(type_1, ..., type_n)`,
+when called directly inside function `fn`,
+checks that `fn`'s 1st argument conforms to `type_1`,
+2nd argument conforms to `type_2`, etc.
 
-* the Lua type of an object, such as `"table"`, `"number"` etc.;
+Type specifiers are strings or tables, and if the arguments passed
+to `fn` don't conform to their specification, a proper error message is produced,
+pinpointing the call to `fn` as the faulty expression.
 
-* an arbitrary name, which would be stored in the `__type` field of
-  the argument's metatable;
+## String type qualifiers
 
-* a type-checking function, which would be stored in the `checkers`
-  global table. This table uses type names as keys, test functions
-  returning Booleans as keys.
+### Lua type
 
-Moreover, types can be prefixed with a `"?"`, which makes them
-optional. For instance, `"?table"` accepts tables as well as `nil`
-values.
-
-A `"?"` alone accepts anything. It is mainly useful as a placeholder,
-to skip an argument which doesn't need to be checked.
-
-Finally, several types can be accepted, if their names are
-concatenated with a bar `"|"` between them. For instance,
-`"table|number"` accepts tables as well as numbers. It can be combined
-with the question mark, so `"?table|number"` accepts tables, numbers
-and nil values. It is actually equivalent to `"nil|table|number"`.
-
-More formally, let's specify `conform(a, t)`, the property that
-argument `a` conforms to the type denoted by `t`. `conform(a,t)` is
-true if and only if at least one of the following propositions is
-verified:
-
-* `conforms(a, t:match "^(.-)|.*"`
-
-* `t == "?"`
-
-* `t:sub(1, 1) == "?" and (conforms(a, t:sub(2, -1)) or a==nil)`
-
-* `type(a) == t`
-
-* `getmetatable(a) and getmetatable(a).__type == t`
-
-* `checkers[t] and checkers[t](a) is true`
-
-* `conforms(a, t:match "^.-|(.*)")`
-
-The above propositions are listed in the order in which they are tried
-by `check`. The higher they appear in the list, the faster `checks`
-accepts aconforming argument. For instance, `checks("number")` is
-faster than:
+The type is simply `type(arg)`, such as `'table'`, `'number'` etc.
 
 ```lua
-checkers.mynumber=function(x) return type(x)=="number" end; checks("mynumber")
+function fn_string(x)
+    checks('string')
+end
+fn_string('foo') -- ok
+fn_string(99) -- error:  bad argument #1 to fn_string (string expected, got number)'
 ```
 
-## Usage examples
+### Metatable type
+
+An arbitrary name, which is stored in the `__type` field of the argument metatable
 
 ```lua
-require 'checks'
+function fn_color(x)
+    checks('color')
+end
+local blue = setmetatable({0, 0, 255}, {__type = 'color'})
+fn_color(blue) -- ok
+fn_color({}) -- error: bad argument #1 to fn_color (color expected, got table)'
+```
 
--- Custom checker function --
-function checkers.port(p)
-  return type(p)=='number' and p>0 and p<0x10000
+### A type-checking function name
+
+The function would be stored in the `checkers` global table.
+This function is called with original value passed to `fn`
+and must return `true` if the value is valid.  
+
+```lua
+function fn_positive(x)
+    checks('positive')
+end
+function checkers.positive(p)
+  return (type(p) == 'number') and (p > 0)
+end
+fn_positive(42) -- ok
+fn_positive(-1) -- error: bad argument #1 to fn_positive (positive expected, got number)'
+```
+
+### Optional type and types combination
+
+Moreover, types can be prefixed with a question mark `?`, which makes them optional.
+For instance, `'?table'` accepts tables as well as `nil` values.
+A `'?'` type alone accepts anything. It is mainly useful as a placeholder
+to skip an argument which doesn't need to be checked.  
+
+Finally, several types can be accepted,
+if their names are concatenated with a bar `|` between them.
+For instance, `'table|number'` accepts tables as well as numbers.
+It can be combined with the question mark,
+so `'?table|number'` accepts tables, numbers and nil values.
+
+Question mark is not equivalent to combination with `'nil'` type:
+`msgpack.NULL` is a valid value for `'?number'`, but not for `'nil|number'` combination.
+
+## Table type qualifiers
+
+The type qualifier may be a table.
+In this case the argument is checked to conform to `'?table'` type, and its content is validated.
+Table values are validated against type qualifiers as described above.
+Table keys, which are not mentioned in `checks`, are validated against `'nil'` type.
+Table type qualifiers may be recursive and use tables too. 
+
+```lua
+function fn_opts(options)
+    checks({
+        my_string = '?string',
+        my_number = '?number',
+    })
 end
 
--- A new named type --
-socket_mt = { __type='socket' }
-asocket = setmetatable ({ }, socket_mt)
+fn_opts({my_string = 's'}) -- ok
+fn_opts({my_number = 101}) -- ok
+fn_opts({my_number = 'x'}) -- error: bad argument options.my_number to fn_opts (?number expected, got string)'
+fn_opts({bad_field = true}) -- error: unexpected argument options.bad_field to fn_opts
+```
 
--- A function that checks its parameters --
-function take_socket_then_port_then_maybe_string (sock, port, str)
-  checks ('socket', 'port', '?string')
+When the optional argument is validated with the table type qualifier,
+its value is set to an empty table. Thus it's safe to do:
+
+```lua
+function fn(options)
+    checks({timeout = '?number'})
+    options.timeout = options.timeout or 5.0
 end
 
-take_socket_then_port_then_maybe_string (asocket, 1024, "hello")
-take_socket_then_port_then_maybe_string (asocket, 1024)
--- A couple of other parameter-checking options --
+fn() -- ok
+```
 
-function take_number_or_string()
-  checks("number|string")
+## Variable number of arguments
+
+Functions with variable number of arguments are supported:
+
+```lua
+function fn_varargs(arg1, ...)
+    checks('string')
 end
 
-function take_number_or_string_or_nil()
-  checks("?number|string")
-end
-function take_anything_followed_by_a_number()
-  checks("?", "number")
-end
--- Catch some incorrect arguments passed to the function --
-
-function must_fail(...)
-  assert (not pcall (take_socket_then_port_then_maybe_string, ...))
-end
-
-must_fail ({ }, 1024, "string")      -- 1st argument isn't a socket
-must_fail (asocket, -1, "string")   -- port number must be 0-0xffff
-must_fail (asocket, 1024, { })    -- 3rd argument cannot be a table
+fn_varargs('s') -- ok
+fn_varargs('s', 1) -- ok
+fn_varargs('s', {}) -- ok
+fn_varargs(42) -- error: bad argument #1 to fn_varargs (string expected, got number)'
 ```
 
 ## Credits
 
 This library was originally a part of
-[[https://github.com/SierraWireless/luasched]]. Now a dependency for
-luacheck.
+[luasched](https://github.com/SierraWireless/luasched).
+Now it is a dependency for luacheck.
