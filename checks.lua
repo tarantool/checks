@@ -36,7 +36,7 @@ local function check_value(level, argname, value, expected_type)
     return error(string.format(
         'bad argument %s to %s (%s expected, got %s)',
         argname, info.name, expected_type, type(value)
-    ), level + 2)
+    ), level)
 end
 
 local function check_table(level, argname, tbl, expected_fields)
@@ -61,7 +61,7 @@ local function check_table(level, argname, tbl, expected_fields)
             error(string.format(
                 'unexpected argument %s to %s',
                 argname, info.name
-            ), level + 2)
+            ), level + 1)
         elseif type(expected_type) == 'string' then
             check_value(level + 1, argname, value, expected_type)
         elseif type(expected_type) == 'table' then
