@@ -24,6 +24,10 @@ function fn_positive_number(arg1)
     checks('positive_number')
 end
 
+function fn_varargs(arg1, ...)
+    checks('string')
+end
+
 function fn_options(options)
     checks({
         mystring = '?string',
@@ -61,7 +65,7 @@ local function test_err(test, code, expected_error)
     -- body
 end
 
-test:plan(34)
+test:plan(38)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -87,6 +91,12 @@ test_err(test, 'fn_number_or_string(msgpack.NULL)',
     'bad argument #1 to fn_number_or_string %(number|string expected, got cdata%)')
 test_err(test, 'fn_number_or_string(true)',
     'bad argument #1 to fn_number_or_string %(number|string expected, got boolean%)')
+
+test_err(test, 'fn_varargs(100)',
+    'bad argument #1 to fn_varargs %(string expected, got number%)')
+test_err(test, 'fn_varargs("s")')
+test_err(test, 'fn_varargs("s", 1)')
+test_err(test, 'fn_varargs("s", "e", 2)')
 
 test_err(test, 'fn_options(1)',
     'bad argument #1 to fn_options %(%?table expected, got number%)')
