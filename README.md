@@ -62,25 +62,25 @@ fn(-1) -- error
 ### Optional type and types combination
 
 Moreover, types can be prefixed with a question mark `?`, which makes them optional.
-For instance, `"?table"` accepts tables as well as `nil` values.
-A `"?"` alone accepts anything. It is mainly useful as a placeholder,
+For instance, `'?table'` accepts tables as well as `nil` values.
+A `'?'` type alone accepts anything. It is mainly useful as a placeholder
 to skip an argument which doesn't need to be checked.  
 
 Finally, several types can be accepted,
-if their names are concatenated with a bar `"|"` between them.
-For instance, `"table|number"` accepts tables as well as numbers.
+if their names are concatenated with a bar `|` between them.
+For instance, `'table|number'` accepts tables as well as numbers.
 It can be combined with the question mark,
-so `"?table|number"` accepts tables, numbers and nil values.
+so `'?table|number'` accepts tables, numbers and nil values.
 
-Question mark is not equivalent to combination with `"nil"` type:
-`msgpack.NULL` is a valid value for `"?number"`, but not for `"nil|number"` combination.
+Question mark is not equivalent to combination with `'nil'` type:
+`msgpack.NULL` is a valid value for `'?number'`, but not for `'nil|number'` combination.
 
 ## Table type qualifiers
 
 The type qualifier may be a table.
-In this case the argument is checked to conform to `"?table"` type, and its content is validated.
+In this case the argument is checked to conform to `'?table'` type, and its content is validated.
 Table values are validated against type qualifiers as described above.
-Table keys, which are not mentioned in `checks`, are validated against `"nil"` type.
+Table keys, which are not mentioned in `checks`, are validated against `'nil'` type.
 Table type qualifiers may be recursive and use tables too. 
 
 ```lua
@@ -93,9 +93,9 @@ local function fn(options)
     options.my_string -- safe
 end
 
-fn({my_string = "s"}) -- ok
+fn({my_string = 's'}) -- ok
 fn({my_number = 101}) -- ok
-fn({my_number = "x"}) -- error
+fn({my_number = 'x'}) -- error
 fn({bad_field = true}) -- error
 ```
 
