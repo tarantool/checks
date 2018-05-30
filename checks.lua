@@ -1,3 +1,5 @@
+#!/usr/bin/env tarantool
+
 local function check_value(level, argname, value, expected_type)
     -- 1. Check for nil if type is optional.
     if expected_type:match('^?') and value == nil then
@@ -32,7 +34,7 @@ local function check_value(level, argname, value, expected_type)
     return error(string.format(
         'bad argument %s to %s (%s expected, got %s)',
         argname, info.name, expected_type, type(value)
-    ), level+2)
+    ), level + 2)
 end
 
 local function check_table(level, argname, tbl, expected_fields)
