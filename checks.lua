@@ -2,7 +2,9 @@
 
 local function check_value(level, argname, value, expected_type)
     -- 1. Check for nil if type is optional.
-    if expected_type:match('^?') and value == nil then
+    if expected_type == '?' then
+        return true
+    elseif expected_type:match('^%?') and value == nil then
         return true
     end
 

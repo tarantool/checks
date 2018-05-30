@@ -24,6 +24,14 @@ function fn_positive_number(arg1)
     checks('positive_number')
 end
 
+function fn_anytype(arg1)
+    checks('?')
+end
+
+function fn_nil_or_number_or_string(arg1)
+    checks('nil|number|string')
+end
+
 function fn_varargs(arg1, ...)
     checks('string')
 end
@@ -65,7 +73,7 @@ local function test_err(test, code, expected_error)
     -- body
 end
 
-test:plan(38)
+test:plan(51)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -91,6 +99,23 @@ test_err(test, 'fn_number_or_string(msgpack.NULL)',
     'bad argument #1 to fn_number_or_string %(number|string expected, got cdata%)')
 test_err(test, 'fn_number_or_string(true)',
     'bad argument #1 to fn_number_or_string %(number|string expected, got boolean%)')
+
+test_err(test, 'fn_anytype()')
+test_err(test, 'fn_anytype(nil)')
+test_err(test, 'fn_anytype(100)')
+test_err(test, 'fn_anytype("s")')
+test_err(test, 'fn_anytype({0})')
+test_err(test, 'fn_anytype(true)')
+test_err(test, 'fn_anytype(msgpack.NULL)')
+
+test_err(test, 'fn_nil_or_number_or_string()')
+test_err(test, 'fn_nil_or_number_or_string(nil)')
+test_err(test, 'fn_nil_or_number_or_string(100)')
+test_err(test, 'fn_nil_or_number_or_string("s")')
+test_err(test, 'fn_nil_or_number_or_string({0})',
+    'bad argument #1 to fn_nil_or_number_or_string %(nil|number|string expected, got table%)')
+test_err(test, 'fn_nil_or_number_or_string(msgpack.NULL)',
+    'bad argument #1 to fn_nil_or_number_or_string %(nil|number|string expected, got cdata%)')
 
 test_err(test, 'fn_varargs(100)',
     'bad argument #1 to fn_varargs %(string expected, got number%)')
