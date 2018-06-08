@@ -83,7 +83,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(51)
+test:plan(53)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -165,6 +165,20 @@ test_err(test, 'fn_inception({we = {need = {to = {go = {deeper = 0}}}}})', nil)
 test_err(test, 'fn_inception({we = {need = {to = {go = {deeper = {}}}}}})',
     'tests.lua', _l_inception,
     'bad argument options.we.need.to.go.deeper to fn_inception %(%?number expected, got table%)')
+
+
+local function deepchecks()
+    checks(2, 'string')
+end
+local _l_deepcheck = 2 + debug.getinfo(1).currentline
+function fn_deepcheck(arg1)
+    deepchecks()
+end
+
+test_err(test, 'fn_deepcheck("s")')
+test_err(test, 'fn_deepcheck(1)',
+    'tests.lua', _l_deepcheck,
+    'bad argument #1 to fn_deepcheck %(string expected, got number%)')
 
 local function check_options(options)
     checks({

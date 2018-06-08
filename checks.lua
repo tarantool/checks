@@ -83,7 +83,7 @@ local function checks(...)
     local level = 1
     if type(arg[1]) == 'number' then
         level = arg[1]
-        arg:remove(1)
+        table.remove(arg, 1)
     end
     level = level + 1 -- escape the checks level
 
