@@ -46,7 +46,7 @@ fn_color({}) -- error: bad argument #1 to fn_color (color expected, got table)'
 
 The function would be stored in the `checkers` global table.
 This function is called with original value passed to `fn`
-and must return `true` if the value is valid.  
+and must return `true` if the value is valid.
 
 ```lua
 function fn_positive(x)
@@ -59,12 +59,30 @@ fn_positive(42) -- ok
 fn_positive(-1) -- error: bad argument #1 to fn_positive (positive expected, got number)'
 ```
 
+Now there are two built-in checkers:
+
+* `checks('uint64')`:
+
+  * Either integer lua number in range from `0` to `2^53-1` (inclusive)
+  * or lua cdata `ctype<uint64_t>`
+  * or lua cdata `ctype<int64_t>` in range from `0` to `LLONG_MAX`
+
+  After the check it is safe to call `ffi.cast('uint64_t', ...)`
+
+* `checks('int64')`:
+
+  * Either integer lua number in range from `-2^53+1` to `2^53-1` (inclusive)
+  * or lua cdata `ctype<uint64_t>` in range from `0` to `LLONG_MAX`
+  * or lua cdata `ctype<int64_t>`
+
+  After the check it is safe to call `ffi.cast('int64_t', ...)`
+
 ### Optional type and types combination
 
 Moreover, types can be prefixed with a question mark `?`, which makes them optional.
 For instance, `'?table'` accepts tables as well as `nil` values.
 A `'?'` type alone accepts anything. It is mainly useful as a placeholder
-to skip an argument which doesn't need to be checked.  
+to skip an argument which doesn't need to be checked.
 
 Finally, several types can be accepted,
 if their names are concatenated with a bar `|` between them.
@@ -81,7 +99,7 @@ The type qualifier may be a table.
 In this case the argument is checked to conform to `'?table'` type, and its content is validated.
 Table values are validated against type qualifiers as described above.
 Table keys, which are not mentioned in `checks`, are validated against `'nil'` type.
-Table type qualifiers may be recursive and use tables too. 
+Table type qualifiers may be recursive and use tables too.
 
 ```lua
 function fn_opts(options)

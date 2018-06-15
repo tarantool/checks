@@ -83,7 +83,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(53)
+test:plan(95)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -223,5 +223,68 @@ end
 test_err(test, 'bad_check_type_2()',
     'tests.lua', _l_bad_check_type_2,
     'checks: type "number" is not supported')
+
+------------------------------------------------------------------------------
+
+function fn_int64(arg)
+    checks('int64')
+end
+
+function fn_uint64(arg)
+    checks('uint64')
+end
+
+local function test_ret(test, code, should_succeed)
+    local fn = loadstring(code)
+    test:is(pcall(fn), should_succeed, code .. ' - ' .. (should_succeed and 'valid' or 'invalid'))
+end
+
+test_ret(test, 'fn_int64(0)', true)
+test_ret(test, 'fn_int64( 1)', true)
+test_ret(test, 'fn_int64(-1)', true)
+test_ret(test, 'fn_int64( 0.5)', false)
+
+test_ret(test, 'fn_int64(-2^53)', false)
+test_ret(test, 'fn_int64(-2^53+1)', true)
+test_ret(test, 'fn_int64( 2^53-1)', true)
+test_ret(test, 'fn_int64( 2^53)', false)
+test_ret(test, 'fn_int64( 0/0)', false) -- NaN
+test_ret(test, 'fn_int64( 1/0)', false) -- +Inf
+test_ret(test, 'fn_int64(-1/0)', false) -- -Inf
+
+test_ret(test, 'fn_int64(-1e16)', false)
+test_ret(test, 'fn_int64(-1e15)', true)
+test_ret(test, 'fn_int64( 1e15)', true)
+test_ret(test, 'fn_int64( 1e16)', false)
+
+test_ret(test, 'fn_int64(-9223372036854775808LL)', true) -- LLONG_MIN
+test_ret(test, 'fn_int64( 9223372036854775807LL)', true) -- LLONG_MAX
+test_ret(test, 'fn_int64( 9223372036854775808ULL)', false) -- 2^63
+test_ret(test, 'fn_int64(18446744073709551615ULL)', false) -- ULLONG_MAX
+test_ret(test, 'fn_int64(tonumber64( "9223372036854775807"))', true)
+test_ret(test, 'fn_int64(tonumber64( "9223372036854775808"))', false)
+test_ret(test, 'fn_int64(tonumber64("-9223372036854775808"))', true)
+
+test_ret(test, 'fn_uint64( 0)', true)
+test_ret(test, 'fn_uint64( 1)', true)
+test_ret(test, 'fn_uint64(-1)', false)
+test_ret(test, 'fn_uint64( 0.5)', false)
+test_ret(test, 'fn_uint64( 2^53-1)', true)
+test_ret(test, 'fn_uint64( 2^53)', false)
+test_ret(test, 'fn_uint64( 2^53+1)', false)
+test_ret(test, 'fn_uint64( 1e15)', true)
+test_ret(test, 'fn_uint64( 1e-1)', false)
+test_ret(test, 'fn_uint64( 1e16)', false)
+test_ret(test, 'fn_uint64( 0/0)', false) -- NaN
+test_ret(test, 'fn_uint64( 1/0)', false) -- +Inf
+test_ret(test, 'fn_uint64(-1/0)', false) -- -Inf
+
+test_ret(test, 'fn_uint64(-9223372036854775808LL)', false) -- LLONG_MIN
+test_ret(test, 'fn_uint64( 9223372036854775807LL)', true) -- LLONG_MAX
+test_ret(test, 'fn_uint64( 9223372036854775808ULL)', true) -- 2^63
+test_ret(test, 'fn_uint64(18446744073709551615ULL)', true) -- ULLONG_MAX
+test_ret(test, 'fn_uint64(tonumber64( "9223372036854775807"))', true)
+test_ret(test, 'fn_uint64(tonumber64( "9223372036854775808"))', true)
+test_ret(test, 'fn_uint64(tonumber64("-9223372036854775808"))', false)
 
 os.exit(test:check())
