@@ -121,4 +121,41 @@ end
 
 _G.checks = checks
 _G.checkers = rawget(_G, 'checkers') or {}
+
+local ffi = require('ffi')
+function checkers.uint64(arg)
+    if type(arg) == 'number' then
+        -- Double floating point format has 52 fraction bits
+        -- If we want to keep integer precision,
+        -- the number must be less than 2^53
+        return (arg >= 0) and (arg < 2^53) and (math.floor(arg) == arg)
+    end
+
+    if type(arg) == 'cdata' then
+        if ffi.istype('int64_t', arg) then
+            return (arg >= 0)
+        elseif ffi.istype('uint64_t', arg) then
+            return true
+        end
+    end
+
+    return false
+end
+
+function checkers.int64(arg)
+    if type(arg) == 'number' then
+        return (arg > -2^53) and (arg < 2^53) and (math.floor(arg) == arg)
+    end
+
+    if type(arg) == 'cdata' then
+        if ffi.istype('int64_t', arg) then
+            return true
+        elseif ffi.istype('uint64_t', arg) then
+            return arg < 2^63
+        end
+    end
+
+    return false
+end
+
 return checks
