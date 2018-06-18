@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Built-in checkers: `int64`, `uint64`
+- Built-in checkers: `uuid`, `uuid_str`, `uuid_bin`
 
 ## [2.0.2] - 2018-06-08
 ### Fixed

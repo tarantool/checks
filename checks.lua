@@ -158,4 +158,29 @@ function checkers.int64(arg)
     return false
 end
 
+local uuid = require('uuid')
+function checkers.uuid(arg)
+    if type(arg) == 'cdata' then
+        return ffi.istype('struct tt_uuid', arg)
+    else
+        return false
+    end
+end
+
+function checkers.uuid_str(arg)
+    if type(arg) == 'string' then
+        return uuid.fromstr(arg) ~= nil
+    else
+        return false
+    end
+end
+
+function checkers.uuid_bin(arg)
+    if type(arg) == 'string' then
+        return uuid.frombin(arg) ~= nil
+    else
+        return false
+    end
+end
+
 return checks

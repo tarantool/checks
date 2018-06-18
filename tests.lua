@@ -83,7 +83,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(95)
+test:plan(107)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -286,5 +286,39 @@ test_ret(test, 'fn_uint64(18446744073709551615ULL)', true) -- ULLONG_MAX
 test_ret(test, 'fn_uint64(tonumber64( "9223372036854775807"))', true)
 test_ret(test, 'fn_uint64(tonumber64( "9223372036854775808"))', true)
 test_ret(test, 'fn_uint64(tonumber64("-9223372036854775808"))', false)
+
+------------------------------------------------------------------------------
+
+uuid = require('uuid')
+myid = uuid()
+
+function fn_uuid(arg)
+    checks('uuid')
+end
+
+function fn_uuid_str(arg)
+    checks('uuid_str')
+end
+
+function fn_uuid_bin(arg)
+    checks('uuid_bin')
+end
+
+test_ret(test, 'fn_uuid(myid)', true)
+test_ret(test, 'fn_uuid(myid:str())', false)
+test_ret(test, 'fn_uuid(myid:bin())', false)
+
+test_ret(test, 'fn_uuid_str(myid)', false)
+test_ret(test, 'fn_uuid_str(myid:str())', true)
+test_ret(test, 'fn_uuid_str(myid:bin())', false)
+
+test_ret(test, 'fn_uuid_bin(myid)', false)
+test_ret(test, 'fn_uuid_bin(myid:str())', false)
+test_ret(test, 'fn_uuid_bin(myid:bin())', true)
+
+-- various cdata
+test_ret(test, 'fn_int64(myid)', false)
+test_ret(test, 'fn_uint64(myid)', false)
+test_ret(test, 'fn_uuid(1ULL)', false)
 
 os.exit(test:check())
