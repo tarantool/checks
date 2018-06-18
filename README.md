@@ -59,7 +59,7 @@ fn_positive(42) -- ok
 fn_positive(-1) -- error: bad argument #1 to fn_positive (positive expected, got number)'
 ```
 
-Now there are two built-in checkers:
+One can use built-in checkers:
 
 * `checks('uint64')`:
 
@@ -76,6 +76,25 @@ Now there are two built-in checkers:
   * or lua cdata `ctype<int64_t>`
 
   After the check it is safe to call `ffi.cast('int64_t', ...)`
+
+* `checks('uuid')`:
+
+  * lua cdata `ctype<struct tt_uuid>`
+    containing `uuid_object` from tarantool built-in
+    [module *uuid*](https://tarantool.io/en/doc/reference/reference_lua/uuid.html)
+
+* `checks('uuid_str')`:
+
+  * uuid as a 36-byte hexadecimal string
+
+  After the check it is safe to call `uuid.fromstr()`
+
+* `checks('uuid_bin')`:
+
+  * uuid as a 16-byte binary string
+
+  After the check it is safe to call `uuid.frombin()`
+
 
 ### Optional type and types combination
 
