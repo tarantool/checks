@@ -4,6 +4,20 @@ This library declares a `checks()` function and a `checkers` table, which
 allow to check the parameters passed to a Lua function in a fast and
 unobtrusive  way.
 
+---
+
+**COGNIZE THE ESSENCE**
+
+It is NOT designed to validate user input.
+It is designed to provide better type checking of function arguments.
+
+It is NOT designed to hide your problems.
+It is designed to reveal mistakes in code.
+
+You should think of `checks` as of `assert` on steroids.
+
+---
+
 ## Description
 
 Function `checks(type_1, ..., type_n)`,
