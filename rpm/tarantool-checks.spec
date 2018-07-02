@@ -1,4 +1,4 @@
-Name: tarantool-queue
+Name: tarantool-checks
 Version: 2.1.0
 Release: 1%{?dist}
 Summary: Persistent in-memory queues for Tarantool
@@ -13,12 +13,15 @@ Requires: tarantool >= 1.7
 %description
 Easy, terse, readable and fast function arguments type checking.
 
+%define luapkgdir %{_datadir}/tarantool
+%define br_luapkgdir %{buildroot}%{luapkgdir}
+
 %prep
 %setup -q -n %{name}-%{version}
 
-%define luapkgdir %{_datadir}/tarantool
 %install
-%make_install
+mkdir -p %{br_luapkgdir}
+cp -av checks.lua %{br_luapkgdir}
 
 %files
 %{luapkgdir}/checks.lua
