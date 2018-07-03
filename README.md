@@ -1,3 +1,8 @@
+<a href="https://travis-ci.org/tarantool/checks">
+    <img src="https://travis-ci.org/tarantool/checks.png?branch=master"
+    align="right">
+</a>
+
 # Argument type checking API
 
 This library declares a `checks()` function and a `checkers` table, which
