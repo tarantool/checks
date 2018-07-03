@@ -30,7 +30,7 @@ script:
   - git describe --long
   - |
     if [ "${TARGET}" = "test" ]; then
-        ./travis-run-tests.lua;
+        ./travis-run-tests.sh;
     else
         git clone https://github.com/packpack/packpack.git packpack;
         packpack/packpack;
