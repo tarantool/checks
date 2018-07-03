@@ -41,7 +41,7 @@ before_deploy:
 
 deploy:
   - provider: packagecloud
-    username: tarantool
+    username: ${PACKAGECLOUD_USER}
     repository: "1_7"
     token: ${PACKAGECLOUD_TOKEN}
     dist: ${OS}/${DIST}
@@ -51,7 +51,7 @@ deploy:
       branch: master
       condition: -n "${OS}" && -n "${DIST}" && -n "${PACKAGECLOUD_TOKEN}"
   - provider: packagecloud
-    username: tarantool
+    username: ${PACKAGECLOUD_USER}
     repository: "1_9"
     token: ${PACKAGECLOUD_TOKEN}
     dist: ${OS}/${DIST}
@@ -61,7 +61,7 @@ deploy:
       branch: master
       condition: -n "${OS}" && -n "${DIST}" && -n "${PACKAGECLOUD_TOKEN}"
   - provider: packagecloud
-    username: tarantool
+    username: ${PACKAGECLOUD_USER}
     repository: "1_10"
     token: ${PACKAGECLOUD_TOKEN}
     dist: ${OS}/${DIST}
@@ -71,7 +71,7 @@ deploy:
       branch: master
       condition: -n "${OS}" && -n "${DIST}" && -n "${PACKAGECLOUD_TOKEN}"
   - provider: packagecloud
-    username: tarantool
+    username: ${PACKAGECLOUD_USER}
     repository: "2_0"
     token: ${PACKAGECLOUD_TOKEN}
     dist: ${OS}/${DIST}
