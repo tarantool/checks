@@ -1,0 +1,5 @@
+tarantool-checks (2.1.0-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Albert Sverdlov <sverdlov@tarantool.org>  Mon, 1 Jul 2018 20:59:00 +0300

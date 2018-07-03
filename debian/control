@@ -1,0 +1,17 @@
+Source: tarantool-expirationd
+Priority: optional
+Section: database
+Maintainer: Albert Sverdlov <sverdlov@tarantool.org>
+Build-Depends: debhelper (>= 9),
+               tarantool (>= 1.6.8.0),
+# For /usr/bin/prove
+               perl (>= 5.10.0)
+Standards-Version: 2.1.0
+Homepage: https://github.com/tarantool/checks
+Vcs-Git: git://github.com/tarantool/checks.git
+Vcs-Browser: https://github.com/tarantool/checks
+
+Package: tarantool-checks
+Architecture: all
+Depends: tarantool (>= 1.6.8.0), ${misc:Depends}
+Description: Easy, terse, readable and fast function arguments type checking.
