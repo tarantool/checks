@@ -7,9 +7,8 @@ License: MIT
 URL: https://github.com/tarantool/checks
 Source0: https://github.com/tarantool/%{name}/archive/%{version}/%{name}-%{version}.tar.gz
 BuildArch: noarch
-BuildRequires: tarantool >= 1.7
-BuildRequires: tarantool-devel >= 1.7
-Requires: tarantool >= 1.7
+BuildRequires: tarantool >= 1.6.8.0
+Requires: tarantool >= 1.6.8.0
 %description
 Easy, terse, readable and fast function arguments type checking.
 
