@@ -1,4 +1,4 @@
-Source: tarantool-expirationd
+Source: tarantool-checks
 Priority: optional
 Section: database
 Maintainer: Albert Sverdlov <sverdlov@tarantool.org>
