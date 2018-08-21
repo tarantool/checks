@@ -1,5 +1,15 @@
 #!/usr/bin/env tarantool
 
+local function argname_fmt(argname, key)
+    if type(key) == 'string' then
+        return string.format('%s.%s', argname, key)
+    elseif type(key) == 'number' then
+        return string.format('%s[%s]', argname, key)
+    else
+        return argname .. '[?]'
+    end
+end
+
 local function check_value(level, argname, value, expected_type)
     level = level + 1 -- escape the check_value level
 
@@ -46,7 +56,8 @@ local function check_table(level, argname, tbl, expected_fields)
 
     for expected_key, expected_type in pairs(expected_fields) do
         if type(expected_type) == 'string' then
-            -- do nothing
+            local argname = argname_fmt(argname, expected_key)
+            check_value(level, argname, tbl[expected_key], expected_type)
         elseif type(expected_type) == 'table' then
             tbl[expected_key] = tbl[expected_key] or {}
         else
@@ -58,7 +69,7 @@ local function check_table(level, argname, tbl, expected_fields)
     end
 
     for key, value in pairs(tbl) do
-        local argname = string.format('%s.%s', argname, key)
+        local argname = argname_fmt(argname, key)
         local expected_type = expected_fields[key]
         if not expected_type then
             local info = debug.getinfo(level, 'nl')

@@ -50,6 +50,16 @@ function fn_options(options)
     })
 end
 
+local _l_array = 2 + debug.getinfo(1).currentline
+function fn_array(array)
+    checks({'number', 'number'})
+end
+
+local _l_table = 2 + debug.getinfo(1).currentline
+function fn_table(table)
+    checks({mykey = 'number'})
+end
+
 local _l_inception = 2 + debug.getinfo(1).currentline
 function fn_inception(options)
     checks({
@@ -83,7 +93,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(107)
+test:plan(120)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -154,6 +164,43 @@ test_err(test, 'fn_options({mynumber = "bad"})',
 test_err(test, 'fn_options({badfield = "bad"})',
     'tests.lua', _l_options,
     'unexpected argument options.badfield to fn_options')
+
+test_err(test, 'fn_array(1)',
+    'tests.lua', _l_array,
+    'bad argument #1 to fn_array %(%?table expected, got number%)')
+test_err(test, 'fn_array()',
+    'tests.lua', _l_array,
+    'bad argument array%[1%] to fn_array %(number expected, got nil%)')
+test_err(test, 'fn_array({})',
+    'tests.lua', _l_array,
+    'bad argument array%[1%] to fn_array %(number expected, got nil%)')
+test_err(test, 'fn_array({"str1"})',
+    'tests.lua', _l_array,
+    'bad argument array%[1%] to fn_array %(number expected, got string%)')
+test_err(test, 'fn_array({1})',
+    'tests.lua', _l_array,
+    'bad argument array%[2%] to fn_array %(number expected, got nil%)')
+test_err(test, 'fn_array({1, 2})')
+test_err(test, 'fn_array({1, 2, 3})',
+    'tests.lua', _l_array,
+    'unexpected argument array%[3%] to fn_array')
+
+test_err(test, 'fn_table(1)',
+    'tests.lua', _l_table,
+    'bad argument #1 to fn_table %(%?table expected, got number%)')
+test_err(test, 'fn_table()',
+    'tests.lua', _l_table,
+    'bad argument table.mykey to fn_table %(number expected, got nil%)')
+test_err(test, 'fn_table({})',
+    'tests.lua', _l_table,
+    'bad argument table.mykey to fn_table %(number expected, got nil%)')
+test_err(test, 'fn_table({mykey = "str"})',
+    'tests.lua', _l_table,
+    'bad argument table.mykey to fn_table %(number expected, got string%)')
+test_err(test, 'fn_table({mykey = 0})')
+test_err(test, 'fn_table({mykey = 0, excess = 1})',
+    'tests.lua', _l_table,
+    'unexpected argument table.excess to fn_table')
 
 test_err(test, 'fn_inception()', nil)
 test_err(test, 'fn_inception({})', nil)
