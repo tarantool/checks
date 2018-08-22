@@ -94,7 +94,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(121)
+test:plan(122)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -157,6 +157,9 @@ test_err(test, 'fn_varargs("s", "e", 2)')
 test_err(test, 'fn_options(1)',
     'tests.lua', _l_options,
     'bad argument #1 to fn_options %(%?table expected, got number%)')
+test_err(test, 'fn_options(false)',
+    'tests.lua', _l_options,
+    'bad argument #1 to fn_options %(%?table expected, got boolean%)')
 test_err(test, 'fn_options({mystring = "s"})')
 test_err(test, 'fn_options({mynumber = 1})')
 test_err(test, 'fn_options({mynumber = "bad"})',
