@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Fixed
 - Checking required options `checks({required = 'string'})`
+- Checking nested tables
 
 ## [2.1.0] - 2018-06-19
 ### Added

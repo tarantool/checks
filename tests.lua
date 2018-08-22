@@ -73,6 +73,7 @@ function fn_inception(options)
             },
         },
     })
+    local _ = options.we.need.to.go.deeper
 end
 
 ------------------------------------------------------------------------------
@@ -93,7 +94,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(120)
+test:plan(121)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -204,6 +205,9 @@ test_err(test, 'fn_table({mykey = 0, excess = 1})',
 
 test_err(test, 'fn_inception()', nil)
 test_err(test, 'fn_inception({})', nil)
+test_err(test, 'fn_inception({we = false})',
+    'tests.lua', _l_inception,
+    'bad argument options.we to fn_inception %(%?table expected, got boolean%)')
 test_err(test, 'fn_inception({we = {}})', nil)
 test_err(test, 'fn_inception({we = {need = {}}})', nil)
 test_err(test, 'fn_inception({we = {need = {to = {}}}})', nil)
