@@ -59,6 +59,8 @@ local function check_table(level, argname, tbl, expected_fields)
             local argname = argname_fmt(argname, expected_key)
             check_value(level, argname, tbl[expected_key], expected_type)
         elseif type(expected_type) == 'table' then
+            local argname = argname_fmt(argname, expected_key)
+            check_value(level, argname, tbl[expected_key], '?table')
             tbl[expected_key] = tbl[expected_key] or {}
         else
             error(string.format(
@@ -80,10 +82,7 @@ local function check_table(level, argname, tbl, expected_fields)
         elseif type(expected_type) == 'string' then
             check_value(level, argname, value, expected_type)
         elseif type(expected_type) == 'table' then
-            check_value(level, argname, value, '?table')
-            if value then
-                check_table(level, argname, value, expected_type)
-            end
+            check_table(level, argname, value, expected_type)
         end
     end
 end
