@@ -88,17 +88,17 @@ local function check_table(level, argname, tbl, expected_fields)
 end
 
 local function checks(...)
-    local arg = {...}
+    local skip = 0
 
     local level = 1
-    if type(arg[1]) == 'number' then
-        level = arg[1]
-        table.remove(arg, 1)
+    if type(...) == 'number' then
+        level = ...
+        skip = 1
     end
     level = level + 1 -- escape the checks level
 
-    for i = 1, table.maxn(arg)+1 do
-        local expected_type = arg[i]
+    for i = 1, select('#', ...) - skip + 1 do
+        local expected_type = select(i + skip, ...)
         local argname, value = debug.getlocal(level, i)
 
         if expected_type == nil and argname == nil then
