@@ -165,6 +165,19 @@ end
 fn() -- ok
 ```
 
+When an argument inside table type qualifier is specified without question mark
+(i.e. not optional), whole table becomes mandatory:
+
+```lua
+function fn(options)
+    checks({
+        req_string = 'string',
+    })
+end
+
+fn() -- error: bad argument options.req_string to fn (string expected, got nil)'
+```
+
 ## Variable number of arguments
 
 Functions with variable number of arguments are supported:
