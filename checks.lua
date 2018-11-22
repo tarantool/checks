@@ -1,15 +1,5 @@
 #!/usr/bin/env tarantool
 
-local function argname_fmt(argname, key)
-    if type(key) == 'string' then
-        return string.format('%s.%s', argname, key)
-    elseif type(key) == 'number' then
-        return string.format('%s[%s]', argname, key)
-    else
-        return argname .. '[?]'
-    end
-end
-
 local function check_plain_type(value, expected_type)
     if type(value) == expected_type then
         return true
@@ -27,8 +17,7 @@ local function check_plain_type(value, expected_type)
     end
 end
 
-local function check_multi_type(level, argname, value, expected_type)
-    level = level + 1 -- escape the check_multi_type level
+local function check_multi_type(value, expected_type)
     local _expected_type = expected_type
 
     -- 1. Check optional type.
@@ -53,49 +42,67 @@ local function check_multi_type(level, argname, value, expected_type)
         end
     end
 
-    return "bad argument %s"
     -- 4. Nothing works, throw error
-    local info = debug.getinfo(level, 'nl')
-    error(string.format(
+    return nil, string.format(
         'bad argument %s to %s (%s expected, got %s)',
-        argname, info.name, _expected_type, type(value)
-    ), level)
+        -- argname and function name are formatted by the caller
+        '%s', '%s', _expected_type, type(value)
+    )
 end
 
-local function check_table_type(level, argname, tbl, expected_fields)
-    level = level + 1 -- escape the check_table_type level
+local function keyname_fmt(key)
+    if type(key) == 'string' then
+        return string.format('.%s', key)
+    elseif type(key) == 'number' then
+        return string.format('[%s]', key)
+    else
+        return '[?]'
+    end
+end
 
+local function check_table_type(tbl, expected_fields)
     for expected_key, expected_type in pairs(expected_fields) do
+        local value = tbl and tbl[expected_key]
+
         if type(expected_type) == 'string' then
-            local argname = argname_fmt(argname, expected_key)
-            check_multi_type(level, argname, tbl[expected_key], expected_type)
+            local ok, efmt = check_multi_type(value, expected_type)
+            if not ok then
+                return nil, string.format(efmt, '%s'..keyname_fmt(expected_key), '%s')
+            end
         elseif type(expected_type) == 'table' then
-            local argname = argname_fmt(argname, expected_key)
-            check_multi_type(level, argname, tbl[expected_key], '?table')
-            tbl[expected_key] = tbl[expected_key] or {}
+            local ok, efmt = check_multi_type(value, '?table')
+            if not ok then
+                return nil, string.format(efmt, '%s'..keyname_fmt(expected_key), '%s')
+            end
+
+            local ok, efmt = check_table_type(value, expected_type)
+            if not ok then
+                return nil, string.format(efmt, '%s'..keyname_fmt(expected_key), '%s')
+            end
         else
-            error(string.format(
+            return nil, string.format(
                 'checks: type %q is not supported',
                 type(expected_type)
-            ), level)
+            )
         end
     end
 
-    for key, value in pairs(tbl) do
-        local argname = argname_fmt(argname, key)
-        local expected_type = expected_fields[key]
-        if not expected_type then
-            local info = debug.getinfo(level, 'nl')
-            error(string.format(
+    if not tbl then
+        return true
+    end
+
+    for key, _ in pairs(tbl) do
+        if not expected_fields[key] then
+            return nil, string.format(
                 'unexpected argument %s to %s',
-                argname, info.name
-            ), level)
-        elseif type(expected_type) == 'string' then
-            check_multi_type(level, argname, value, expected_type)
-        elseif type(expected_type) == 'table' then
-            check_table_type(level, argname, value, expected_type)
+                -- argname and function name
+                -- are formatted by the caller
+                '%s'..keyname_fmt(key), '%s'
+            )
         end
     end
+
+    return true
 end
 
 local function checks(...)
@@ -115,27 +122,42 @@ local function checks(...)
         if expected_type == nil and argname == nil then
             break
         elseif expected_type == nil then
-            error(string.format(
+            local err = string.format(
                 'checks: argument %q is not checked',
                 argname
-            ), level)
+            )
+            error(err, level)
         elseif argname == nil then
-            error(string.format(
-                'checks: excess check, absent argument'
-            ), level)
+            local err = 'checks: excess check, absent argument'
+            error(err, level)
         elseif type(expected_type) == 'string' then
-            check_multi_type(level, string.format('#%d', i), value, expected_type)
+            local ok, efmt = check_multi_type(value, expected_type)
+            if not ok then
+                local info = debug.getinfo(level, 'nl')
+                local err = string.format(efmt, '#'..tostring(i), info.name)
+                error(err, level)
+            end
 
         elseif type(expected_type) == 'table' then
-            check_multi_type(level, string.format('#%d', i), value, '?table')
-            local value = value or {}
-            check_table_type(level, argname, value, expected_type)
-            debug.setlocal(level, i, value)
+            local ok, efmt = check_multi_type(value, '?table')
+            if not ok then
+                local info = debug.getinfo(level, 'nl')
+                local err = string.format(efmt, '#'..tostring(i), info.name)
+                error(err, level)
+            end
+
+            local ok, efmt = check_table_type(value, expected_type)
+            if not ok then
+                local info = debug.getinfo(level, 'nl')
+                local err = string.format(efmt, argname, info.name)
+                error(err, level)
+            end
         else
-            error(string.format(
+            local err = string.format(
                 'checks: type %q is not supported',
                 type(expected_type)
-            ), level)
+            )
+            error(err, level)
         end
     end
 end

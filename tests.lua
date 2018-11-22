@@ -3,6 +3,7 @@
 require('strict').on()
 msgpack = require('msgpack')
 local tap = require('tap')
+local json = require('json')
 local checks = require('checks')
 local test = tap.test('checks_test')
 
@@ -73,7 +74,6 @@ function fn_inception(options)
             },
         },
     })
-    local _ = options.we.need.to.go.deeper
 end
 
 ------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(122)
+test:plan(129)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -234,17 +234,29 @@ test_err(test, 'fn_deepcheck(1)',
     'tests.lua', _l_deepcheck,
     'bad argument #1 to fn_deepcheck %(string expected, got number%)')
 
+local optcopy = nil
 local function check_options(options)
+    optcopy = table.deepcopy(options)
     checks({
         a = {
-            b = {
+            b1 = {
+                c = '?',
+            },
+            b2 = {
                 c = '?',
             },
         },
     })
-    test:is_deeply(options, {a={b={c=nil}}}, 'options == {a={b={c=nil}}}')
+    test:is_deeply(options, optcopy, ('checks does not modify %s'):format(json.encode(optcopy)))
 end
 check_options()
+check_options{}
+check_options{a = {}}
+check_options{a = {b1 = {}}}
+check_options{a = {b2 = {}}}
+check_options{a = {b1 = {c = 0}}}
+check_options{a = {b2 = {c = 0}}}
+check_options{a = {b1 = {c = 0}, b2 = {c = 2}}}
 
 local _l_excess_checks = 2 + debug.getinfo(1).currentline
 function fn_excess_checks(arg1)

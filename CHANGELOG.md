@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Performance optimization
 
+### Changed
+- Checking table type qualifiers does not change any arguments (incompatible change)
+
 ## [2.1.1] - 2018-08-22
 ### Fixed
 - Checking required options `checks({required = 'string'})`
