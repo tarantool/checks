@@ -10,7 +10,7 @@ local function argname_fmt(argname, key)
     end
 end
 
-local function check_type(value, expected_type)
+local function check_plain_type(value, expected_type)
     if type(value) == expected_type then
         return true
     end
@@ -27,8 +27,8 @@ local function check_type(value, expected_type)
     end
 end
 
-local function check_value(level, argname, value, expected_type)
-    level = level + 1 -- escape the check_value level
+local function check_multi_type(level, argname, value, expected_type)
+    level = level + 1 -- escape the check_multi_type level
     local _expected_type = expected_type
 
     -- 1. Check optional type.
@@ -42,17 +42,18 @@ local function check_value(level, argname, value, expected_type)
     end
 
     -- 2. Check exact type match
-    if check_type(value, expected_type) then
+    if check_plain_type(value, expected_type) then
         return true
     end
 
     -- 3. Check multiple types.
     for typ in expected_type:gmatch('[^|]+') do
-        if check_type(value, typ) then
+        if check_plain_type(value, typ) then
             return true
         end
     end
 
+    return "bad argument %s"
     -- 4. Nothing works, throw error
     local info = debug.getinfo(level, 'nl')
     error(string.format(
@@ -61,16 +62,16 @@ local function check_value(level, argname, value, expected_type)
     ), level)
 end
 
-local function check_table(level, argname, tbl, expected_fields)
-    level = level + 1 -- escape the check_table level
+local function check_table_type(level, argname, tbl, expected_fields)
+    level = level + 1 -- escape the check_table_type level
 
     for expected_key, expected_type in pairs(expected_fields) do
         if type(expected_type) == 'string' then
             local argname = argname_fmt(argname, expected_key)
-            check_value(level, argname, tbl[expected_key], expected_type)
+            check_multi_type(level, argname, tbl[expected_key], expected_type)
         elseif type(expected_type) == 'table' then
             local argname = argname_fmt(argname, expected_key)
-            check_value(level, argname, tbl[expected_key], '?table')
+            check_multi_type(level, argname, tbl[expected_key], '?table')
             tbl[expected_key] = tbl[expected_key] or {}
         else
             error(string.format(
@@ -90,9 +91,9 @@ local function check_table(level, argname, tbl, expected_fields)
                 argname, info.name
             ), level)
         elseif type(expected_type) == 'string' then
-            check_value(level, argname, value, expected_type)
+            check_multi_type(level, argname, value, expected_type)
         elseif type(expected_type) == 'table' then
-            check_table(level, argname, value, expected_type)
+            check_table_type(level, argname, value, expected_type)
         end
     end
 end
@@ -123,12 +124,12 @@ local function checks(...)
                 'checks: excess check, absent argument'
             ), level)
         elseif type(expected_type) == 'string' then
-            check_value(level, string.format('#%d', i), value, expected_type)
+            check_multi_type(level, string.format('#%d', i), value, expected_type)
 
         elseif type(expected_type) == 'table' then
-            check_value(level, string.format('#%d', i), value, '?table')
+            check_multi_type(level, string.format('#%d', i), value, '?table')
             local value = value or {}
-            check_table(level, argname, value, expected_type)
+            check_table_type(level, argname, value, expected_type)
             debug.setlocal(level, i, value)
         else
             error(string.format(
