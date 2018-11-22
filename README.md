@@ -153,13 +153,15 @@ fn_opts({my_number = 'x'}) -- error: bad argument options.my_number to fn_opts (
 fn_opts({bad_field = true}) -- error: unexpected argument options.bad_field to fn_opts
 ```
 
-When the optional argument is validated with the table type qualifier,
-its value is set to an empty table. Thus it's safe to do:
+Since v3.0 `checks` does not modify any arguments. Be careful when indexing options table:
 
 ```lua
 function fn(options)
     checks({timeout = '?number'})
-    options.timeout = options.timeout or 5.0
+    print(options.timeout) -- attempt to index local 'options' (a nil value)
+
+    options = options or {}
+    print(options.timeout) -- ok, prints nil
 end
 
 fn() -- ok
