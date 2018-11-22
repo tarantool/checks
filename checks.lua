@@ -10,35 +10,45 @@ local function argname_fmt(argname, key)
     end
 end
 
+local function check_type(value, expected_type)
+    if type(value) == expected_type then
+        return true
+    end
+
+    local mt = getmetatable(value)
+    local value_metatype = mt and mt.__type
+    if value_metatype == expected_type then
+        return true
+    end
+
+    local checker = _G.checkers[expected_type]
+    if type(checker) == 'function' and checker(value) == true then
+        return true
+    end
+end
+
 local function check_value(level, argname, value, expected_type)
     level = level + 1 -- escape the check_value level
+    local _expected_type = expected_type
 
-    -- 1. Check for nil if type is optional.
+    -- 1. Check optional type.
     if expected_type == '?' then
         return true
-    elseif expected_type:startswith('?') and value == nil then
+    elseif expected_type:startswith('?') then
+        if value == nil then
+            return true
+        end
+        expected_type = expected_type:sub(2)
+    end
+
+    -- 2. Check exact type match
+    if check_type(value, expected_type) then
         return true
     end
 
-    local valid_types = {}
-    for typ in expected_type:gmatch('[^|?]+') do
-        valid_types[typ] = true
-    end
-
-    -- 2. Check real type.
-    if valid_types[type(value)] == true then
-        return true
-    end
-
-    -- 3. Check for type name in metatable.
-    local mt = getmetatable(value)
-    if mt and valid_types[mt.__type] == true then
-        return true
-    end
-
-    for typ, _ in pairs(valid_types) do
-        local checker = _G.checkers[typ]
-        if type(checker) == 'function' and checker(value) == true then
+    -- 3. Check multiple types.
+    for typ in expected_type:gmatch('[^|]+') do
+        if check_type(value, typ) then
             return true
         end
     end
@@ -47,7 +57,7 @@ local function check_value(level, argname, value, expected_type)
     local info = debug.getinfo(level, 'nl')
     error(string.format(
         'bad argument %s to %s (%s expected, got %s)',
-        argname, info.name, expected_type, type(value)
+        argname, info.name, _expected_type, type(value)
     ), level)
 end
 
