@@ -156,15 +156,21 @@ fn_opts({bad_field = true}) -- error: unexpected argument options.bad_field to f
 Since v3.0 `checks` does not modify any arguments. Be careful when indexing options table:
 
 ```lua
-function fn(options)
+function fn_bad(options)
     checks({timeout = '?number'})
-    print(options.timeout) -- attempt to index local 'options' (a nil value)
-
-    options = options or {}
-    print(options.timeout) -- ok, prints nil
+    print(options.timeout)
 end
 
-fn() -- ok
+fn_bad() -- error: attempt to index local 'options' (a nil value)
+
+
+function fn_good(options)
+    checks({timeout = '?number'})
+    local timeout = options and options.timeout or default_value
+    print(timeout)
+end
+
+fn_good() -- ok, prints default_value
 ```
 
 When an argument inside table type qualifier is specified without question mark
