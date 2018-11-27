@@ -15,6 +15,8 @@ local function check_plain_type(value, expected_type)
     if type(checker) == 'function' and checker(value) == true then
         return true
     end
+
+    return false
 end
 
 local function check_multi_type(value, expected_type)
