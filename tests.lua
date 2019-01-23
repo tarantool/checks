@@ -1,7 +1,6 @@
 #!/usr/bin/env tarantool
 
 require('strict').on()
-msgpack = require('msgpack')
 local tap = require('tap')
 local json = require('json')
 local checks = require('checks')
@@ -105,7 +104,7 @@ test_err(test, 'fn_number_optstring(4, 0)',
 test_err(test, 'fn_number_optstring(5, {})',
     'tests.lua', _l_number_optstring,
     'bad argument #2 to fn_number_optstring %(%?string expected, got table%)')
-test_err(test, 'fn_number_optstring(6, msgpack.NULL)')
+test_err(test, 'fn_number_optstring(6, box.NULL)')
 test_err(test, 'fn_number_optstring("7")',
     'tests.lua', _l_number_optstring,
     'bad argument #1 to fn_number_optstring %(number expected, got string%)')
@@ -121,7 +120,7 @@ test_err(test, 'fn_number_or_string("s")')
 test_err(test, 'fn_number_or_string(nil)',
     'tests.lua', _l_number_or_string,
     'bad argument #1 to fn_number_or_string %(number|string expected, got nil%)')
-test_err(test, 'fn_number_or_string(msgpack.NULL)',
+test_err(test, 'fn_number_or_string(box.NULL)',
     'tests.lua', _l_number_or_string,
     'bad argument #1 to fn_number_or_string %(number|string expected, got cdata%)')
 test_err(test, 'fn_number_or_string(true)',
@@ -134,7 +133,7 @@ test_err(test, 'fn_anytype(100)')
 test_err(test, 'fn_anytype("s")')
 test_err(test, 'fn_anytype({0})')
 test_err(test, 'fn_anytype(true)')
-test_err(test, 'fn_anytype(msgpack.NULL)')
+test_err(test, 'fn_anytype(box.NULL)')
 
 test_err(test, 'fn_nil_or_number_or_string()')
 test_err(test, 'fn_nil_or_number_or_string(nil)')
@@ -143,7 +142,7 @@ test_err(test, 'fn_nil_or_number_or_string("s")')
 test_err(test, 'fn_nil_or_number_or_string({0})',
     'tests.lua', _l_nil_or_number_or_string,
     'bad argument #1 to fn_nil_or_number_or_string %(nil|number|string expected, got table%)')
-test_err(test, 'fn_nil_or_number_or_string(msgpack.NULL)',
+test_err(test, 'fn_nil_or_number_or_string(box.NULL)',
     'tests.lua', _l_nil_or_number_or_string,
     'bad argument #1 to fn_nil_or_number_or_string %(nil|number|string expected, got cdata%)')
 
