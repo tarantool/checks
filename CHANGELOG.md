@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Repair multiple question marks (`checks('?type1|?type2')`) for better compatibility with v2.x,
   which has been accidentally broken in v3.0.0
 - Further performance optimization by caching types qualifiers
+- Speed up uuid, uuid_str, uuid_bin checkers
 
 ### Added
 
