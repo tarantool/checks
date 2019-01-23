@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Fixed
+
+- Repair multiple question marks (`checks('?type1|?type2')`) for better compatibility with v2.x,
+  which has been accidentally broken in v3.0.0
+- Further performance optimization by caching types qualifiers
+
 ## [3.0.0] - 2018-11-27
 ### Fixed
 - Performance optimization

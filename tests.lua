@@ -37,6 +37,11 @@ function fn_nil_or_number_or_string(arg1)
     checks('nil|number|string')
 end
 
+local _l_optnumber_or_optstring = 2 + debug.getinfo(1).currentline
+function fn_optnumber_or_optstring(arg1)
+    checks('?number|?string')
+end
+
 local _l_varargs = 2 + debug.getinfo(1).currentline
 function fn_varargs(arg1, ...)
     checks('string')
@@ -93,7 +98,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(129)
+test:plan(134)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -145,6 +150,14 @@ test_err(test, 'fn_nil_or_number_or_string({0})',
 test_err(test, 'fn_nil_or_number_or_string(box.NULL)',
     'tests.lua', _l_nil_or_number_or_string,
     'bad argument #1 to fn_nil_or_number_or_string %(nil|number|string expected, got cdata%)')
+
+test_err(test, 'fn_optnumber_or_optstring()')
+test_err(test, 'fn_optnumber_or_optstring(nil)')
+test_err(test, 'fn_optnumber_or_optstring(100)')
+test_err(test, 'fn_optnumber_or_optstring("s")')
+test_err(test, 'fn_optnumber_or_optstring({0})',
+    'tests.lua', _l_optnumber_or_optstring,
+    'bad argument #1 to fn_optnumber_or_optstring %(%?number|%?string expected, got table%)')
 
 test_err(test, 'fn_varargs(100)',
     'tests.lua', _l_varargs,
