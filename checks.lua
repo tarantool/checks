@@ -229,25 +229,35 @@ function checkers.int64(arg)
 end
 
 local uuid = require('uuid')
+local uuid_t = ffi.typeof('struct tt_uuid')
 function checkers.uuid(arg)
     if type(arg) == 'cdata' then
-        return ffi.istype('struct tt_uuid', arg)
+        return ffi.istype(uuid_t, arg)
     else
         return false
     end
 end
 
 function checkers.uuid_str(arg)
-    if type(arg) == 'string' then
-        return uuid.fromstr(arg) ~= nil
+    if type(arg) == 'string' and #arg == 36 then
+        local match = arg:match(
+            '^'..
+            '%x%x%x%x%x%x%x%x%-'..
+            '%x%x%x%x%-'..
+            '%x%x%x%x%-'..
+            '[0-9a-dA-D]%x%x%x%-'..
+            '%x%x%x%x%x%x%x%x%x%x%x%x'..
+            '$'
+        )
+        return match ~= nil
     else
         return false
     end
 end
 
 function checkers.uuid_bin(arg)
-    if type(arg) == 'string' then
-        return uuid.frombin(arg) ~= nil
+    if type(arg) == 'string' and #arg == 16 then
+        return true
     else
         return false
     end

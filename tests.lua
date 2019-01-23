@@ -98,7 +98,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(143)
+test:plan(150)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -417,6 +417,13 @@ test_ret(test, 'fn_uuid(myid:bin())', false)
 
 test_ret(test, 'fn_uuid_str(myid)', false)
 test_ret(test, 'fn_uuid_str(myid:str())', true)
+test_ret(test, 'fn_uuid_str(myid:str():upper())', true)
+test_ret(test, 'fn_uuid_str("00000000-0000-0000-e000-000000000000")', false) -- illegal variant
+test_ret(test, 'fn_uuid_str("00000000-0000-0000-f000-000000000000")', false) -- illegal variant
+test_ret(test, 'fn_uuid_str("00000000-0000-0000-Z000-000000000000")', false) -- illegal letter
+test_ret(test, 'fn_uuid_str("00000000-0000-0000#0000-000000000000")', false) -- illegal format
+test_ret(test, 'fn_uuid_str("00000000-0000-0000-0000-00000000000")', false) -- illegal len
+test_ret(test, 'fn_uuid_str("00000000-0000-0000-0000-0000000000000")', false) -- illegal len
 test_ret(test, 'fn_uuid_str(myid:bin())', false)
 
 test_ret(test, 'fn_uuid_bin(myid)', false)
