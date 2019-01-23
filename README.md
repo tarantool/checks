@@ -117,19 +117,23 @@ One can use built-in checkers:
 
 ### Optional type and types combination
 
-Moreover, types can be prefixed with a question mark `?`, which makes them optional.
-For instance, `'?table'` accepts tables as well as `nil` values.
+Moreover, several types can be accepted
+if their names are concatenated with a bar `|` between them.
+For instance, `'table|number'` accepts tables as well as numbers.
+
+Finally, string type qualifier can be prefixed
+with a question mark `?`, which makes them optional.
+For instance, `'?table'` accepts tables as well as `nil` values,
+`'?table|number'` accepts tables, numbers and nil values.
+
+Question mark is not an equivalent to combination with the `'nil'` type:
+`box.NULL` is a valid value for `'?number'`, but not for `'nil|number'` combination.
+
 A `'?'` type alone accepts anything. It is mainly useful as a placeholder
 to skip an argument which doesn't need to be checked.
 
-Finally, several types can be accepted,
-if their names are concatenated with a bar `|` between them.
-For instance, `'table|number'` accepts tables as well as numbers.
-It can be combined with the question mark,
-so `'?table|number'` accepts tables, numbers and nil values.
-
-Question mark is not equivalent to combination with `'nil'` type:
-`msgpack.NULL` is a valid value for `'?number'`, but not for `'nil|number'` combination.
+To sum up, the string type qualifier has the following syntax:
+either `'[?]type1[|type2[...]]'` or single `'?'`.
 
 ## Table type qualifiers
 
