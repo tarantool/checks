@@ -177,6 +177,22 @@ end
 fn_good() -- ok, prints default_value
 ```
 
+To keep backward compatibility you can use the flag `_G._checks_v2_compatible = true`.
+This will substitute `nil` arguments with an empty table (as it used to be in v2.1).
+
+```lua
+_G._checks_v2_compatible = true
+local checks = require('checks')
+local json = require('json')
+
+function fn_v2_compatible(options)
+    checks({timeout = '?number'})
+    print(options.timeout)
+end
+
+fn_v2_compatible() -- ok, prints "nil"
+```
+
 When an argument inside table type qualifier is specified without question mark
 (i.e. not optional), whole table becomes mandatory:
 

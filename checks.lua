@@ -91,6 +91,11 @@ local function check_table_type(tbl, expected_fields)
                 return nil, string.format(efmt, '%s'..keyname_fmt(expected_key), '%s')
             end
 
+            if _G._checks_v2_compatible and value == nil then
+                value = {}
+                tbl[expected_key] = value
+            end
+
             local ok, efmt = check_table_type(value, expected_type)
             if not ok then
                 return nil, string.format(efmt, '%s'..keyname_fmt(expected_key), '%s')
@@ -162,6 +167,11 @@ local function checks(...)
                 error(err, level)
             end
 
+            if _G._checks_v2_compatible and value == nil then
+                value = {}
+                debug.setlocal(level, i, value)
+            end
+
             local ok, efmt = check_table_type(value, expected_type)
             if not ok then
                 local info = debug.getinfo(level, 'nl')
@@ -180,6 +190,7 @@ end
 
 _G.checks = checks
 _G.checkers = rawget(_G, 'checkers') or {}
+_G._checks_v2_compatible = rawget(_G, '_checks_v2_compatible') or false
 
 local ffi = require('ffi')
 function checkers.uint64(arg)
