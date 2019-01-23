@@ -98,7 +98,7 @@ local function test_err(test, code, expected_file, expected_line, expected_error
     -- body
 end
 
-test:plan(139)
+test:plan(143)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -278,6 +278,26 @@ check_options{a = {b2 = {}}}
 check_options{a = {b1 = {c = 0}}}
 check_options{a = {b2 = {c = 0}}}
 check_options{a = {b1 = {c = 0}, b2 = {c = 2}}}
+
+local function check_v2_compatibility(options)
+    _G._checks_v2_compatible = true
+    checks({
+        a = {
+            b1 = {
+                c = '?',
+            },
+            b2 = {
+                c = '?',
+            },
+        },
+    })
+    _G._checks_v2_compatible = false
+    test:is_deeply(options, {a={b1={c=nil}, b2={c=nil}}}, 'v2.x compatibility, options == {a={b1={c=nil}, b2={c=nil}}}')
+end
+check_v2_compatibility()
+check_v2_compatibility{}
+check_v2_compatibility(box.NULL)
+check_v2_compatibility{a = {}}
 
 local _l_excess_checks = 2 + debug.getinfo(1).currentline
 function fn_excess_checks(arg1)

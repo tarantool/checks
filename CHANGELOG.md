@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   which has been accidentally broken in v3.0.0
 - Further performance optimization by caching types qualifiers
 
+### Added
+
+- v2.x compatibility flag `_G._checks_v2_compatible` which makes
+  table type qualifiers to substitute nil arguments with an empty table
+  (as it used to be in v2.1)
+
 ## [3.0.0] - 2018-11-27
 ### Fixed
 - Performance optimization
