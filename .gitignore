@@ -7,3 +7,4 @@ Testing/
 *.so
 *.dylib
 packpack
+.rocks
