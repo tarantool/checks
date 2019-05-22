@@ -14,4 +14,4 @@ EOF
 
 sudo apt-get update > /dev/null
 sudo apt-get -q -y install tarantool tarantool-dev --force-yes
-exec ./tests.lua
+exec ./test.lua
