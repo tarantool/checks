@@ -73,6 +73,10 @@ local function keyname_fmt(key)
 end
 
 local function check_table_type(tbl, expected_fields)
+    if tbl == nil then
+        tbl = nil
+    end
+
     for expected_key, expected_type in pairs(expected_fields) do
         local value = tbl and tbl[expected_key]
 
