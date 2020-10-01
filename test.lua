@@ -99,7 +99,7 @@ local function test_err(test, code, expected_line, expected_error)
     -- body
 end
 
-test:plan(150)
+test:plan(155)
 test_err(test, 'fn_number_optstring(1)')
 test_err(test, 'fn_number_optstring(1, nil)')
 test_err(test, 'fn_number_optstring(2, "s")')
@@ -435,5 +435,37 @@ test_ret(test, 'fn_uuid_bin(myid:bin())', true)
 test_ret(test, 'fn_int64(myid)', false)
 test_ret(test, 'fn_uint64(myid)', false)
 test_ret(test, 'fn_uuid(1ULL)', false)
+
+------------------------------------------------------------------------------
+
+function fn_tuple(arg)
+    checks('tuple')
+end
+
+test_ret(test, 'fn_tuple(box.tuple.new({1, 2, 3}))', true)
+test_ret(test, 'fn_tuple({1, 2, 3})', false)
+test_ret(test, 'fn_tuple(1ULL)', false)
+test_ret(test, 'fn_tuple(1)', false)
+
+------------------------------------------------------------------------------
+
+local has_decimal, decimal = pcall(require, 'decimal')
+
+if has_decimal and decimal.is_decimal then
+    function fn_decimal(arg)
+        checks('decimal')
+    end
+
+    test:test('decimal tests', function(test)
+        test:plan(5)
+        test_ret(test, 'fn_decimal(require("decimal").new(123))', true)
+        test_ret(test, 'fn_decimal(require("decimal").new("123"))', true)
+        test_ret(test, 'fn_decimal(123)', false)
+        test_ret(test, 'fn_decimal(1ULL)', false)
+        test_ret(test, 'fn_decimal(1)', false)
+    end)
+else
+    test:skip('decimal is not supported')
+end
 
 os.exit(test:check())
