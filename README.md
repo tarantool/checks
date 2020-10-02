@@ -114,6 +114,15 @@ One can use built-in checkers:
 
   After the check it is safe to call `uuid.frombin()`
 
+* `checks('tuple')`:
+
+  * Check that specified value is tuple
+
+* `checks('decimal')`:
+
+  * Check that specified value is decimal
+
+  (Available since Tarantool 2.4)
 
 ### Optional type and types combination
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env tarantool
-
 local _qualifiers_cache = {
     -- ['?type1|type2'] = {
     --     [1] = 'type1',
@@ -228,14 +226,17 @@ function checkers.int64(arg)
     return false
 end
 
-local uuid = require('uuid')
+checkers.tuple = box.tuple.is
+
+local has_decimal, decimal = pcall(require, 'decimal')
+if has_decimal and decimal.is_decimal then
+    checkers.decimal = decimal.is_decimal
+end
+
+-- https://github.com/tarantool/tarantool/blob/7682d34162be34648172d91008e9185301bce8f6/src/lua/uuid.lua#L29
 local uuid_t = ffi.typeof('struct tt_uuid')
 function checkers.uuid(arg)
-    if type(arg) == 'cdata' then
-        return ffi.istype(uuid_t, arg)
-    else
-        return false
-    end
+    return ffi.istype(uuid_t, arg)
 end
 
 function checkers.uuid_str(arg)
