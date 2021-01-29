@@ -1,7 +1,7 @@
 Name: tarantool-checks
 Version: 2.1.0
 Release: 1%{?dist}
-Summary: Persistent in-memory queues for Tarantool
+Summary: Easy, terse, readable and fast function arguments type checking
 Group: Applications/Databases
 License: MIT
 URL: https://github.com/tarantool/checks
