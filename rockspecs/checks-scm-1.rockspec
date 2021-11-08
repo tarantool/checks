@@ -1,7 +1,7 @@
 package = "checks"
 version = "scm-1"
 source = {
-    url    = 'git://github.com/tarantool/checks.git',
+    url    = 'git+https://github.com/tarantool/checks.git',
     branch = "master",
 }
 
