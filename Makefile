@@ -3,3 +3,6 @@ all:
 
 test:
 	./test.lua
+
+perf:
+	./perftest.lua
