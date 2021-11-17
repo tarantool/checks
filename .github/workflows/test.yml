@@ -12,7 +12,7 @@ jobs:
 
     runs-on: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
       - uses: tarantool/setup-tarantool@v1
         with:
           tarantool-version: ${{ matrix.tarantool }}
