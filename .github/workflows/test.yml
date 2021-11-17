@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  test:
+  test-tarantool:
     strategy:
       fail-fast: false
       matrix:
@@ -22,3 +22,17 @@ jobs:
 
       - name: Run performance testing
         run: make perf
+
+  test-luajit:
+    strategy:
+      fail-fast: false
+
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Setup LuaJIT
+        run: sudo apt install -y luajit
+
+      - name: Load checks module in LuaJIT
+        run: luajit -l checks -e 'os.exit()'

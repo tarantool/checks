@@ -6,6 +6,10 @@ local _qualifiers_cache = {
     -- },
 }
 
+local function is_tarantool()
+    return _G['_TARANTOOL'] ~= nil
+end
+
 local function check_string_type(value, expected_type)
     -- 1. Check any value.
     if expected_type == '?' then
@@ -226,17 +230,19 @@ function checkers.int64(arg)
     return false
 end
 
-checkers.tuple = box.tuple.is
-
 local has_decimal, decimal = pcall(require, 'decimal')
 if has_decimal and decimal.is_decimal then
     checkers.decimal = decimal.is_decimal
 end
 
--- https://github.com/tarantool/tarantool/blob/7682d34162be34648172d91008e9185301bce8f6/src/lua/uuid.lua#L29
-local uuid_t = ffi.typeof('struct tt_uuid')
-function checkers.uuid(arg)
-    return ffi.istype(uuid_t, arg)
+if is_tarantool() == true then
+    checkers.tuple = box.tuple.is
+
+    -- https://github.com/tarantool/tarantool/blob/7682d34162be34648172d91008e9185301bce8f6/src/lua/uuid.lua#L29
+    local uuid_t = ffi.typeof('struct tt_uuid')
+    function checkers.uuid(arg)
+        return ffi.istype(uuid_t, arg)
+    end
 end
 
 function checkers.uuid_str(arg)
