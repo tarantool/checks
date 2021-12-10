@@ -1,3 +1,15 @@
+local ffi = require('ffi')
+
+ffi.cdef[[
+    int memcmp(const char *mem1, const char *mem2, size_t num);
+]]
+
+local err_string_arg = "bad argument #%d to '%s' (%s expected, got %s)"
+
+local c_char_ptr     = ffi.typeof('const char *')
+
+local memcmp  = ffi.C.memcmp
+
 local _qualifiers_cache = {
     -- ['?type1|type2'] = {
     --     [1] = 'type1',
@@ -9,6 +21,57 @@ local _qualifiers_cache = {
 local function is_tarantool()
     return _G['_TARANTOOL'] ~= nil
 end
+
+--- Check that string (or substring) starts with given string
+-- Optionally restricting the matching with the given offsets
+-- @function startswith
+-- @string    inp     original string
+-- @string    head    the substring to check against
+-- @int[opt]  _start  start index of matching boundary
+-- @int[opt]  _end    end index of matching boundary
+-- @returns           boolean
+local function startswith(inp, head, _start, _end)
+    if type(inp) ~= 'string' then
+        error(err_string_arg:format(1, 'string.startswith', 'string',
+                                    type(inp)), 2)
+    end
+    if type(head) ~= 'string' then
+        error(err_string_arg:format(2, 'string.startswith', 'string',
+                                    type(head)), 2)
+    end
+    if _start ~= nil and type(_start) ~= 'number' then
+        error(err_string_arg:format(3, 'string.startswith', 'integer',
+                                    type(_start)), 2)
+    end
+    if _end ~= nil and type(_end) ~= 'number' then
+        error(err_string_arg:format(4, 'string.startswith', 'integer',
+                                    type(_end)), 2)
+    end
+    -- prepare input arguments (move negative values [offset from the end] to
+    -- positive ones and/or assign default values)
+    local head_len, inp_len = #head, #inp
+    if _start == nil then
+        _start = 1
+    elseif _start < 0 then
+        _start = inp_len + _start + 1
+        if _start < 0 then _start = 0 end
+    end
+    if _end == nil or _end > inp_len then
+        _end = inp_len
+    elseif _end < 0 then
+        _end = inp_len + _end + 1
+        if _end < 0 then _end = 0 end
+    end
+    -- check for degenerate case (interval lesser than input)
+    if head_len == 0 then
+        return true
+    elseif _end - _start + 1 < head_len or _start > _end then
+        return false
+    end
+    _start = _start - 1
+    return memcmp(c_char_ptr(inp) + _start, c_char_ptr(head), head_len) == 0
+end
+
 
 local function check_string_type(value, expected_type)
     -- 1. Check any value.
@@ -22,7 +85,7 @@ local function check_string_type(value, expected_type)
         qualifier = { optional = false }
 
         for typ in expected_type:gmatch('[^|]+') do
-            if typ:startswith('?') then
+            if startswith(typ, '?') then
                 qualifier.optional = true
                 typ = typ:sub(2)
             end
