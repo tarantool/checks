@@ -1,7 +1,4 @@
-<a href="https://travis-ci.org/tarantool/checks">
-    <img src="https://travis-ci.org/tarantool/checks.png?branch=master"
-    align="right">
-</a>
+[![Test](https://github.com/tarantool/checks/actions/workflows/test.yml/badge.svg)](https://github.com/tarantool/checks/actions/workflows/test.yml)
 
 # Argument type checking API
 
