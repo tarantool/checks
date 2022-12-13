@@ -8,9 +8,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tarantool: ['1.10', '2.5', '2.6', '2.7', '2.8']
+        tarantool: ['1.10', '2.5', '2.6', '2.7', '2.8', '2.10']
 
-    runs-on: [ubuntu-latest]
+    runs-on: [ubuntu-20.04]
     steps:
       - uses: actions/checkout@v2
       - uses: tarantool/setup-tarantool@v1
@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
 
-    runs-on: [ubuntu-latest]
+    runs-on: [ubuntu-20.04]
     steps:
       - uses: actions/checkout@master
 
