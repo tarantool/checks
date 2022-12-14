@@ -12,8 +12,8 @@ jobs:
 
     runs-on: [ubuntu-20.04]
     steps:
-      - uses: actions/checkout@v2
-      - uses: tarantool/setup-tarantool@v1
+      - uses: actions/checkout@v3
+      - uses: tarantool/setup-tarantool@v2
         with:
           tarantool-version: ${{ matrix.tarantool }}
 
@@ -29,7 +29,7 @@ jobs:
 
     runs-on: [ubuntu-20.04]
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v3
 
       - name: Setup LuaJIT
         run: sudo apt install -y luajit
