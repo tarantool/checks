@@ -624,6 +624,15 @@ end
 
 local has_error = (box.error ~= nil) and (box.error.new ~= nil)
 
+function testdata.fn_datetime(arg) -- luacheck: no unused args
+    checks('datetime')
+end
+
+local has_datetime, datetime = pcall(require, 'datetime')
+if has_datetime then
+    testdata.datetime = datetime
+end
+
 local ret_cases = {
     -- fn_int64
     {
@@ -968,6 +977,64 @@ local ret_cases = {
     {
         skip = not has_error,
         code = 'fn_error(1)',
+        ok = false,
+    },
+
+    -- fn_datetime
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime(datetime.new())',
+        ok = true,
+        additional_data = {'datetime'},
+    },
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime(datetime.new{year=2023, month=1, day=11})',
+        ok = true,
+        additional_data = {'datetime'},
+    },
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime(datetime.new{nsec=1001001})',
+        ok = true,
+        additional_data = {'datetime'},
+    },
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime(datetime.new{timestamp=1673439642})',
+        ok = true,
+        additional_data = {'datetime'},
+    },
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime(datetime.new{tzoffset=180})',
+        ok = true,
+        additional_data = {'datetime'},
+    },
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime(datetime.new{tz="Europe/Moscow"})',
+        ok = true,
+        additional_data = {'datetime'},
+    },
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime()',
+        ok = false,
+    },
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime("1.11.2023")',
+        ok = false,
+    },
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime(1673439642)',
+        ok = false,
+    },
+    {
+        skip = not has_datetime,
+        code = 'fn_datetime({year=2023, month=1, day=11})',
         ok = false,
     },
 }

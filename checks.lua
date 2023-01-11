@@ -349,4 +349,9 @@ end
 
 add_ffi_type_checker('error', 'struct error')
 
+local has_datetime, datetime = pcall(require, 'datetime')
+if has_datetime then
+    checkers.datetime = datetime.is_datetime
+end
+
 return checks
