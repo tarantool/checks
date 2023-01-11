@@ -354,4 +354,6 @@ if has_datetime then
     checkers.datetime = datetime.is_datetime
 end
 
+add_ffi_type_checker('interval', 'struct interval')
+
 return checks

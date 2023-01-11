@@ -633,6 +633,12 @@ if has_datetime then
     testdata.datetime = datetime
 end
 
+function testdata.fn_interval(arg) -- luacheck: no unused args
+    checks('interval')
+end
+
+local has_interval = has_datetime and datetime.interval ~= nil
+
 local ret_cases = {
     -- fn_int64
     {
@@ -1035,6 +1041,36 @@ local ret_cases = {
     {
         skip = not has_datetime,
         code = 'fn_datetime({year=2023, month=1, day=11})',
+        ok = false,
+    },
+
+    -- fn_interval
+    {
+        skip = not has_interval,
+        code = 'fn_interval(datetime.interval.new())',
+        ok = true,
+        additional_data = {'datetime'},
+    },
+    {
+        skip = not has_interval,
+        code = 'fn_interval(datetime.interval.new{day=1})',
+        ok = true,
+        additional_data = {'datetime'},
+    },
+    {
+        skip = not has_interval,
+        code = 'fn_interval(datetime.interval.new{month=1, adjust="last"})',
+        ok = true,
+        additional_data = {'datetime'},
+    },
+    {
+        skip = not has_interval,
+        code = 'fn_interval()',
+        ok = false,
+    },
+    {
+        skip = not has_interval,
+        code = 'fn_interval({month=1, adjust="last"})',
         ok = false,
     },
 }
