@@ -347,4 +347,6 @@ function checkers.uuid_bin(arg)
     end
 end
 
+add_ffi_type_checker('error', 'struct error')
+
 return checks

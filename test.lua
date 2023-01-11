@@ -618,6 +618,12 @@ if has_decimal then
     testdata.decimal = decimal
 end
 
+function testdata.fn_error(arg) -- luacheck: no unused args
+    checks('error')
+end
+
+local has_error = (box.error ~= nil) and (box.error.new ~= nil)
+
 local ret_cases = {
     -- fn_int64
     {
@@ -935,6 +941,33 @@ local ret_cases = {
     {
         skip = not has_decimal,
         code = 'fn_decimal(1)',
+        ok = false,
+    },
+
+    -- fn_error
+    {
+        skip = not has_error,
+        code = 'fn_error(box.error.new(box.error.UNKNOWN))',
+        ok = true,
+    },
+    {
+        skip = not has_error,
+        code = 'fn_error(box.error.UNKNOWN)', -- It's an error code, not an error object.
+        ok = false,
+    },
+    {
+        skip = not has_error,
+        code = 'fn_error(select(2, pcall(error, "my error")))',
+        ok = false,
+    },
+    {
+        skip = not has_error,
+        code = 'fn_error()',
+        ok = false,
+    },
+    {
+        skip = not has_error,
+        code = 'fn_error(1)',
         ok = false,
     },
 }
