@@ -18,10 +18,6 @@ local _qualifiers_cache = {
     -- },
 }
 
-local function is_tarantool()
-    return rawget(_G, '_TARANTOOL') ~= nil
-end
-
 --- Check that string (or substring) starts with given string
 -- Optionally restricting the matching with the given offsets
 -- @function startswith
@@ -297,20 +293,34 @@ function checkers.int64(arg)
     return false
 end
 
-local has_decimal, decimal = pcall(require, 'decimal')
-if has_decimal and decimal.is_decimal then
-    checkers.decimal = decimal.is_decimal
+local has_box = rawget(_G, 'box') ~= nil
+if has_box and box.tuple ~= nil then
+    checkers.tuple = box.tuple.is
 end
 
-if is_tarantool() == true then
-    checkers.tuple = box.tuple.is
-
-    -- https://github.com/tarantool/tarantool/blob/7682d34162be34648172d91008e9185301bce8f6/src/lua/uuid.lua#L29
-    local uuid_t = ffi.typeof('struct tt_uuid')
-    function checkers.uuid(arg)
-        return ffi.istype(uuid_t, arg)
+local has_decimal, decimal = pcall(require, 'decimal')
+if has_decimal then
+    -- There is a decimal.is_decimal check since 2.4, but we
+    -- reimplement it here to support older versions which have decimal.
+    local cdata_t = ffi.typeof(decimal.new(0))
+    checkers.decimal = function(arg)
+        return ffi.istype(cdata_t, arg)
     end
 end
+
+local function add_ffi_type_checker(checks_type, c_type)
+    local has_cdata_t, cdata_t = pcall(ffi.typeof, c_type)
+    if has_cdata_t then
+        checkers[checks_type] = function(arg)
+            return ffi.istype(cdata_t, arg)
+        end
+    end
+end
+
+-- There is a uuid.is_uuid check since 2.6.1, but we
+-- reimplement it here to support older versions which have uuid.
+-- https://github.com/tarantool/tarantool/blob/7682d34162be34648172d91008e9185301bce8f6/src/lua/uuid.lua#L29
+add_ffi_type_checker('uuid', 'struct tt_uuid')
 
 function checkers.uuid_str(arg)
     if type(arg) == 'string' and #arg == 36 then
