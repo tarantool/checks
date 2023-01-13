@@ -1,55 +1,59 @@
 #!/usr/bin/env tarantool
 
-require('strict').on()
-local tap = require('tap')
+local t = require('luatest')
+
 local json = require('json')
 local checks = require('checks')
-local test = tap.test('checks_test')
+
+local g = t.group('checks')
 
 ------------------------------------------------------------------------------
 local current_file = debug.getinfo(1, 'S').short_src
 
+------------------------------------------------------------------------------
+local checkers = rawget(_G, 'checkers')
 function checkers.positive_number(n)
     return type(n) == 'number' and n > 0
 end
 
+local testdata = {}
+
 local _l_number_optstring = 2 + debug.getinfo(1).currentline
-function fn_number_optstring(arg1, arg2)
+function testdata.fn_number_optstring(arg1, arg2) -- luacheck: no unused args
     checks('number', '?string')
 end
 
 local _l_number_or_string = 2 + debug.getinfo(1).currentline
-function fn_number_or_string(arg1)
+function testdata.fn_number_or_string(arg1) -- luacheck: no unused args
     checks('number|string')
 end
 
 local _l_positive_number = 2 + debug.getinfo(1).currentline
-function fn_positive_number(arg1)
+function testdata.fn_positive_number(arg1) -- luacheck: no unused args
     checks('positive_number')
 end
 
-local _l_anytype = 2 + debug.getinfo(1).currentline
-function fn_anytype(arg1)
+function testdata.fn_anytype(arg1) -- luacheck: no unused args
     checks('?')
 end
 
 local _l_nil_or_number_or_string = 2 + debug.getinfo(1).currentline
-function fn_nil_or_number_or_string(arg1)
+function testdata.fn_nil_or_number_or_string(arg1) -- luacheck: no unused args
     checks('nil|number|string')
 end
 
 local _l_optnumber_or_optstring = 2 + debug.getinfo(1).currentline
-function fn_optnumber_or_optstring(arg1)
+function testdata.fn_optnumber_or_optstring(arg1) -- luacheck: no unused args
     checks('?number|?string')
 end
 
 local _l_varargs = 2 + debug.getinfo(1).currentline
-function fn_varargs(arg1, ...)
+function testdata.fn_varargs(arg1, ...) -- luacheck: no unused args
     checks('string')
 end
 
 local _l_options = 2 + debug.getinfo(1).currentline
-function fn_options(options)
+function testdata.fn_options(options) -- luacheck: no unused args
     checks({
         mystring = '?string',
         mynumber = '?number',
@@ -57,17 +61,17 @@ function fn_options(options)
 end
 
 local _l_array = 2 + debug.getinfo(1).currentline
-function fn_array(array)
+function testdata.fn_array(array) -- luacheck: no unused args
     checks({'number', 'number'})
 end
 
 local _l_table = 2 + debug.getinfo(1).currentline
-function fn_table(table)
+function testdata.fn_table(table) -- luacheck: no unused args
     checks({mykey = 'number'})
 end
 
 local _l_inception = 2 + debug.getinfo(1).currentline
-function fn_inception(options)
+function testdata.fn_inception(options) -- luacheck: no unused args
     checks({
         we = {
             need = {
@@ -81,180 +85,421 @@ function fn_inception(options)
     })
 end
 
-------------------------------------------------------------------------------
-
-local function test_err(test, code, expected_line, expected_error)
-    local fn = loadstring(code)
-    local ok, err = pcall(fn)
-
-    if expected_error == nil then
-        local testname = code .. ' - nil'
-        test:is(err, nil, testname)
-    else
-        local testname = string.format('%s - %s', code, expected_error:gsub('%%', ''))
-        local expected_err = string.format('%s:%d: %s',
-            current_file, expected_line, expected_error)
-        test:like(err, expected_err, testname)
-    end
-    -- body
-end
-
-test:plan(155)
-test_err(test, 'fn_number_optstring(1)')
-test_err(test, 'fn_number_optstring(1, nil)')
-test_err(test, 'fn_number_optstring(2, "s")')
-test_err(test, 'fn_number_optstring(3, "s", "excess")')
-test_err(test, 'fn_number_optstring(4, 0)',
-    _l_number_optstring,
-    'bad argument #2 to fn_number_optstring %(%?string expected, got number%)')
-test_err(test, 'fn_number_optstring(5, {})',
-    _l_number_optstring,
-    'bad argument #2 to fn_number_optstring %(%?string expected, got table%)')
-test_err(test, 'fn_number_optstring(6, box.NULL)')
-test_err(test, 'fn_number_optstring("7")',
-    _l_number_optstring,
-    'bad argument #1 to fn_number_optstring %(number expected, got string%)')
-
-test_err(test, 'fn_positive_number(8)')
-test_err(test, 'fn_positive_number(setmetatable({}, {__type = "positive_number"}))')
-test_err(test, 'fn_positive_number(0)',
-    _l_positive_number,
-    'bad argument #1 to fn_positive_number %(positive_number expected, got number%)')
-
-test_err(test, 'fn_number_or_string(100)')
-test_err(test, 'fn_number_or_string("s")')
-test_err(test, 'fn_number_or_string(nil)',
-    _l_number_or_string,
-    'bad argument #1 to fn_number_or_string %(number|string expected, got nil%)')
-test_err(test, 'fn_number_or_string(box.NULL)',
-    _l_number_or_string,
-    'bad argument #1 to fn_number_or_string %(number|string expected, got cdata%)')
-test_err(test, 'fn_number_or_string(true)',
-    _l_number_or_string,
-    'bad argument #1 to fn_number_or_string %(number|string expected, got boolean%)')
-
-test_err(test, 'fn_anytype()')
-test_err(test, 'fn_anytype(nil)')
-test_err(test, 'fn_anytype(100)')
-test_err(test, 'fn_anytype("s")')
-test_err(test, 'fn_anytype({0})')
-test_err(test, 'fn_anytype(true)')
-test_err(test, 'fn_anytype(box.NULL)')
-
-test_err(test, 'fn_nil_or_number_or_string()')
-test_err(test, 'fn_nil_or_number_or_string(nil)')
-test_err(test, 'fn_nil_or_number_or_string(100)')
-test_err(test, 'fn_nil_or_number_or_string("s")')
-test_err(test, 'fn_nil_or_number_or_string({0})',
-    _l_nil_or_number_or_string,
-    'bad argument #1 to fn_nil_or_number_or_string %(nil|number|string expected, got table%)')
-test_err(test, 'fn_nil_or_number_or_string(box.NULL)',
-    _l_nil_or_number_or_string,
-    'bad argument #1 to fn_nil_or_number_or_string %(nil|number|string expected, got cdata%)')
-
-test_err(test, 'fn_optnumber_or_optstring()')
-test_err(test, 'fn_optnumber_or_optstring(nil)')
-test_err(test, 'fn_optnumber_or_optstring(100)')
-test_err(test, 'fn_optnumber_or_optstring("s")')
-test_err(test, 'fn_optnumber_or_optstring({0})',
-    _l_optnumber_or_optstring,
-    'bad argument #1 to fn_optnumber_or_optstring %(%?number|%?string expected, got table%)')
-
-test_err(test, 'fn_varargs(100)',
-    _l_varargs,
-    'bad argument #1 to fn_varargs %(string expected, got number%)')
-test_err(test, 'fn_varargs("s")')
-test_err(test, 'fn_varargs("s", 1)')
-test_err(test, 'fn_varargs("s", "e", 2)')
-
-test_err(test, 'fn_options(1)',
-    _l_options,
-    'bad argument #1 to fn_options %(%?table expected, got number%)')
-test_err(test, 'fn_options(false)',
-    _l_options,
-    'bad argument #1 to fn_options %(%?table expected, got boolean%)')
-test_err(test, 'fn_options()')
-test_err(test, 'fn_options(nil)')
-test_err(test, 'fn_options(box.NULL)')
-test_err(test, 'fn_options({mystring = "s"})')
-test_err(test, 'fn_options({mynumber = 1})')
-test_err(test, 'fn_options({mynumber = "bad"})',
-    _l_options,
-    'bad argument options.mynumber to fn_options %(%?number expected, got string%)')
-test_err(test, 'fn_options({badfield = "bad"})',
-    _l_options,
-    'unexpected argument options.badfield to fn_options')
-
-test_err(test, 'fn_array(1)',
-    _l_array,
-    'bad argument #1 to fn_array %(%?table expected, got number%)')
-test_err(test, 'fn_array()',
-    _l_array,
-    'bad argument array%[1%] to fn_array %(number expected, got nil%)')
-test_err(test, 'fn_array(nil)',
-    _l_array,
-    'bad argument array%[1%] to fn_array %(number expected, got nil%)')
-test_err(test, 'fn_array(box.NULL)',
-    _l_array,
-    'bad argument array%[1%] to fn_array %(number expected, got nil%)')
-test_err(test, 'fn_array({})',
-    _l_array,
-    'bad argument array%[1%] to fn_array %(number expected, got nil%)')
-test_err(test, 'fn_array({"str1"})',
-    _l_array,
-    'bad argument array%[1%] to fn_array %(number expected, got string%)')
-test_err(test, 'fn_array({1})',
-    _l_array,
-    'bad argument array%[2%] to fn_array %(number expected, got nil%)')
-test_err(test, 'fn_array({1, 2})')
-test_err(test, 'fn_array({1, 2, 3})',
-    _l_array,
-    'unexpected argument array%[3%] to fn_array')
-
-test_err(test, 'fn_table(1)',
-    _l_table,
-    'bad argument #1 to fn_table %(%?table expected, got number%)')
-test_err(test, 'fn_table()',
-    _l_table,
-    'bad argument table.mykey to fn_table %(number expected, got nil%)')
-test_err(test, 'fn_table({})',
-    _l_table,
-    'bad argument table.mykey to fn_table %(number expected, got nil%)')
-test_err(test, 'fn_table({mykey = "str"})',
-    _l_table,
-    'bad argument table.mykey to fn_table %(number expected, got string%)')
-test_err(test, 'fn_table({mykey = 0})')
-test_err(test, 'fn_table({mykey = 0, excess = 1})',
-    _l_table,
-    'unexpected argument table.excess to fn_table')
-
-test_err(test, 'fn_inception()', nil)
-test_err(test, 'fn_inception({})', nil)
-test_err(test, 'fn_inception({we = false})',
-    _l_inception,
-    'bad argument options.we to fn_inception %(%?table expected, got boolean%)')
-test_err(test, 'fn_inception({we = {}})', nil)
-test_err(test, 'fn_inception({we = {need = {}}})', nil)
-test_err(test, 'fn_inception({we = {need = {to = {}}}})', nil)
-test_err(test, 'fn_inception({we = {need = {to = {go = {}}}}})', nil)
-test_err(test, 'fn_inception({we = {need = {to = {go = {deeper = 0}}}}})', nil)
-test_err(test, 'fn_inception({we = {need = {to = {go = {deeper = {}}}}}})',
-    _l_inception,
-    'bad argument options.we.need.to.go.deeper to fn_inception %(%?number expected, got table%)')
-
-
 local function deepchecks()
     checks(2, 'string')
 end
+
 local _l_deepcheck = 2 + debug.getinfo(1).currentline
-function fn_deepcheck(arg1)
+function testdata.fn_deepcheck(arg1) -- luacheck: no unused args
     deepchecks()
 end
 
-test_err(test, 'fn_deepcheck("s")')
-test_err(test, 'fn_deepcheck(1)',
-    _l_deepcheck,
-    'bad argument #1 to fn_deepcheck %(string expected, got number%)')
+local _l_excess_checks = 2 + debug.getinfo(1).currentline
+function testdata.fn_excess_checks(arg1) -- luacheck: no unused args
+    checks('?number', '?string')
+end
+
+local _l_missing_checks = 2 + debug.getinfo(1).currentline
+function testdata.fn_missing_checks(arg1, arg2) -- luacheck: no unused args
+    checks('?number')
+end
+
+local _l_bad_check_type_1 = 2 + debug.getinfo(1).currentline
+function testdata.bad_check_type_1(arg1, arg2) -- luacheck: no unused args
+    checks("?string", 5)
+end
+
+local _l_bad_check_type_2 = 2 + debug.getinfo(1).currentline
+function testdata.bad_check_type_2(arg1, arg2) -- luacheck: no unused args
+    checks({param = 5})
+end
+
+local err_cases = {
+    -- fn_number_optstring
+    {
+        code = 'fn_number_optstring(1)',
+    },
+    {
+        code = 'fn_number_optstring(1, nil)',
+    },
+    {
+        code = 'fn_number_optstring(2, "s")',
+    },
+    {
+        code = 'fn_number_optstring(3, "s", "excess")',
+    },
+    {
+        code = 'fn_number_optstring(4, 0)',
+        line = _l_number_optstring,
+        error = 'bad argument #2 to fn_number_optstring (?string expected, got number)',
+    },
+    {
+        code = 'fn_number_optstring(5, {})',
+        line = _l_number_optstring,
+        error = 'bad argument #2 to fn_number_optstring (?string expected, got table)',
+    },
+    {
+        code = 'fn_number_optstring(6, box.NULL)',
+    },
+    {
+        code = 'fn_number_optstring("7")',
+        line = _l_number_optstring,
+        error = 'bad argument #1 to fn_number_optstring (number expected, got string)',
+    },
+
+    -- fn_positive_number
+    {
+        code = 'fn_positive_number(8)',
+    },
+    {
+        code = 'fn_positive_number(setmetatable({}, {__type = "positive_number"}))',
+    },
+    {
+        code = 'fn_positive_number(0)',
+        line = _l_positive_number,
+        error = 'bad argument #1 to fn_positive_number (positive_number expected, got number)',
+    },
+
+    -- fn_number_or_string
+    {
+        code = 'fn_number_or_string(100)',
+    },
+    {
+        code = 'fn_number_or_string("s")',
+    },
+    {
+        code = 'fn_number_or_string(nil)',
+        line = _l_number_or_string,
+        error = 'bad argument #1 to fn_number_or_string (number|string expected, got nil)',
+    },
+    {
+        code = 'fn_number_or_string(box.NULL)',
+        line = _l_number_or_string,
+        error = 'bad argument #1 to fn_number_or_string (number|string expected, got cdata)',
+    },
+    {
+        code = 'fn_number_or_string(true)',
+        line = _l_number_or_string,
+        error = 'bad argument #1 to fn_number_or_string (number|string expected, got boolean)',
+    },
+
+    -- fn_anytype
+    {
+        code = 'fn_anytype()',
+    },
+    {
+        code = 'fn_anytype(nil)',
+    },
+    {
+        code = 'fn_anytype(100)',
+    },
+    {
+        code = 'fn_anytype("s")',
+    },
+    {
+        code = 'fn_anytype({0})',
+    },
+    {
+        code = 'fn_anytype(true)',
+    },
+    {
+        code = 'fn_anytype(box.NULL)',
+    },
+
+    -- fn_nil_or_number_or_string
+    {
+        code = 'fn_nil_or_number_or_string()',
+    },
+    {
+        code = 'fn_nil_or_number_or_string(nil)',
+    },
+    {
+        code = 'fn_nil_or_number_or_string(100)',
+    },
+    {
+        code = 'fn_nil_or_number_or_string("s")',
+    },
+    {
+        code = 'fn_nil_or_number_or_string({0})',
+        line = _l_nil_or_number_or_string,
+        error = 'bad argument #1 to fn_nil_or_number_or_string (nil|number|string expected, got table)',
+    },
+    {
+        code = 'fn_nil_or_number_or_string(box.NULL)',
+        line = _l_nil_or_number_or_string,
+        error = 'bad argument #1 to fn_nil_or_number_or_string (nil|number|string expected, got cdata)',
+    },
+
+    -- fn_optnumber_or_optstring
+    {
+        code = 'fn_optnumber_or_optstring()',
+    },
+    {
+        code = 'fn_optnumber_or_optstring(nil)',
+    },
+    {
+        code = 'fn_optnumber_or_optstring(100)',
+    },
+    {
+        code = 'fn_optnumber_or_optstring("s")',
+    },
+    {
+        code = 'fn_optnumber_or_optstring({0})',
+        line = _l_optnumber_or_optstring,
+        error = 'bad argument #1 to fn_optnumber_or_optstring (?number|?string expected, got table)',
+    },
+
+    -- fn_varargs
+    {
+        code = 'fn_varargs(100)',
+        line = _l_varargs,
+        error = 'bad argument #1 to fn_varargs (string expected, got number)',
+    },
+    {
+        code = 'fn_varargs("s")',
+    },
+    {
+        code = 'fn_varargs("s", 1)',
+    },
+    {
+        code = 'fn_varargs("s", "e", 2)',
+    },
+
+    -- fn_options
+    {
+        code = 'fn_options(1)',
+        line = _l_options,
+        error = 'bad argument #1 to fn_options (?table expected, got number)',
+    },
+    {
+        code = 'fn_options(false)',
+        line = _l_options,
+        error = 'bad argument #1 to fn_options (?table expected, got boolean)',
+    },
+    {
+        code = 'fn_options()',
+    },
+    {
+        code = 'fn_options(nil)',
+    },
+    {
+        code = 'fn_options(box.NULL)',
+    },
+    {
+        code = 'fn_options({mystring = "s"})',
+    },
+    {
+        code = 'fn_options({mynumber = 1})',
+    },
+    {
+        code = 'fn_options({mynumber = "bad"})',
+        line = _l_options,
+        error = 'bad argument options.mynumber to fn_options (?number expected, got string)',
+    },
+    {
+        code = 'fn_options({badfield = "bad"})',
+        line = _l_options,
+        error = 'unexpected argument options.badfield to fn_options',
+    },
+
+    -- fn_array
+    {
+        code = 'fn_array(1)',
+        line = _l_array,
+        error = 'bad argument #1 to fn_array (?table expected, got number)',
+    },
+    {
+        code = 'fn_array()',
+        line = _l_array,
+        error = 'bad argument array[1] to fn_array (number expected, got nil)',
+    },
+    {
+        code = 'fn_array(nil)',
+        line = _l_array,
+        error = 'bad argument array[1] to fn_array (number expected, got nil)',
+    },
+    {
+        code = 'fn_array(box.NULL)',
+        line = _l_array,
+        error = 'bad argument array[1] to fn_array (number expected, got nil)',
+    },
+    {
+        code = 'fn_array({})',
+        line = _l_array,
+        error = 'bad argument array[1] to fn_array (number expected, got nil)',
+    },
+    {
+        code = 'fn_array({"str1"})',
+        line = _l_array,
+        error = 'bad argument array[1] to fn_array (number expected, got string)',
+    },
+    {
+        code = 'fn_array({1})',
+        line = _l_array,
+        error = 'bad argument array[2] to fn_array (number expected, got nil)',
+    },
+    {
+        code = 'fn_array({1, 2})',
+    },
+    {
+        code = 'fn_array({1, 2, 3})',
+        line = _l_array,
+        error = 'unexpected argument array[3] to fn_array',
+    },
+
+    -- fn_table
+    {
+        code = 'fn_table(1)',
+        line = _l_table,
+        error = 'bad argument #1 to fn_table (?table expected, got number)',
+    },
+    {
+        code = 'fn_table()',
+        line = _l_table,
+        error = 'bad argument table.mykey to fn_table (number expected, got nil)',
+    },
+    {
+        code = 'fn_table({})',
+        line = _l_table,
+        error = 'bad argument table.mykey to fn_table (number expected, got nil)',
+    },
+    {
+        code = 'fn_table({mykey = "str"})',
+        line = _l_table,
+        error = 'bad argument table.mykey to fn_table (number expected, got string)',
+    },
+    {
+        code = 'fn_table({mykey = 0})',
+    },
+    {
+        code = 'fn_table({mykey = 0, excess = 1})',
+        line = _l_table,
+        error = 'unexpected argument table.excess to fn_table',
+    },
+
+    -- fn_inception
+    {
+        code = 'fn_inception()',
+    },
+    {
+        code = 'fn_inception({})',
+    },
+    {
+        code = 'fn_inception({we = false})',
+        line = _l_inception,
+        error = 'bad argument options.we to fn_inception (?table expected, got boolean)',
+    },
+    {
+        code = 'fn_inception({we = {}})',
+    },
+    {
+        code = 'fn_inception({we = {need = {}}})',
+    },
+    {
+        code = 'fn_inception({we = {need = {to = {}}}})',
+    },
+    {
+        code = 'fn_inception({we = {need = {to = {go = {}}}}})',
+    },
+    {
+        code = 'fn_inception({we = {need = {to = {go = {deeper = 0}}}}})',
+    },
+    {
+        code = 'fn_inception({we = {need = {to = {go = {deeper = {}}}}}})',
+        line = _l_inception,
+        error = 'bad argument options.we.need.to.go.deeper to fn_inception (?number expected, got table)',
+    },
+
+    -- fn_deepcheck
+    {
+        code = 'fn_deepcheck("s")',
+    },
+    {
+        code = 'fn_deepcheck(1)',
+        line = _l_deepcheck,
+        error = 'bad argument #1 to fn_deepcheck (string expected, got number)',
+    },
+
+    -- fn_excess_checks
+    {
+        code = 'fn_excess_checks()',
+        line = _l_excess_checks,
+        error = 'checks: excess check, absent argument',
+    },
+    {
+        code = 'fn_missing_checks()',
+        line = _l_missing_checks,
+        error = 'checks: argument "arg2" is not checked',
+    },
+    {
+        code = 'bad_check_type_1()',
+        line = _l_bad_check_type_1,
+        error = 'checks: type "number" is not supported',
+    },
+    {
+        code = 'bad_check_type_2()',
+        line = _l_bad_check_type_2,
+        error = 'checks: type "number" is not supported',
+    },
+}
+
+for _, case in pairs(err_cases) do
+    -- dots in test case name are not expected
+    local name = ('test_err_%s'):format(case.code):gsub('%.', '_')
+
+    local _, _, fn_name = case.code:find('(.-)%(')
+    assert(#fn_name > 0)
+
+    g.before_test(name, function(_)
+        rawset(_G, fn_name, testdata[fn_name])
+    end)
+
+    g[name] = function(_)
+        local fn = loadstring(case.code)
+        local ok, err = pcall(fn)
+
+        if case.error == nil then
+            t.assert_equals(ok, true)
+            t.assert_equals(err, nil)
+        else
+            t.assert_equals(ok, false)
+            local expected_err = ('%s:%d: %s'):format(current_file, case.line, case.error)
+            t.assert_str_contains(err, expected_err)
+        end
+    end
+
+    g.after_test(name, function(_)
+        rawset(_G, fn_name, nil)
+    end)
+end
+
+------------------------------------------------------------------------------
+local options_cases = {
+    {
+        args = nil,
+    },
+    {
+        args = {},
+    },
+    {
+        args = {a = {}},
+    },
+    {
+        args = {a = {b1 = {}}},
+    },
+    {
+        args = {a = {b2 = {}}},
+    },
+    {
+        args = {a = {b1 = {c = 0}}},
+    },
+    {
+        args = {a = {b2 = {c = 0}}},
+    },
+    {
+        args = {a = {b1 = {c = 0}, b2 = {c = 2}}},
+    },
+}
 
 local optcopy = nil
 local function check_options(options)
@@ -269,19 +514,35 @@ local function check_options(options)
             },
         },
     })
-    test:is_deeply(options, optcopy, ('checks does not modify %s'):format(json.encode(optcopy)))
+    t.assert_equals(options, optcopy, 'checks does not modify options')
 end
-check_options()
-check_options{}
-check_options{a = {}}
-check_options{a = {b1 = {}}}
-check_options{a = {b2 = {}}}
-check_options{a = {b1 = {c = 0}}}
-check_options{a = {b2 = {c = 0}}}
-check_options{a = {b1 = {c = 0}, b2 = {c = 2}}}
+
+for _, case in pairs(options_cases) do
+    -- dots in test case name are not expected
+    local name = ('test_options_%s'):format(json.encode(case.args)):gsub('%.', '_')
+
+    g[name] = function(_)
+        check_options(case.args)
+    end
+end
+
+------------------------------------------------------------------------------
+local options_v2_cases = {
+    {
+        args = nil,
+    },
+    {
+        args = {},
+    },
+    {
+        args = box.NULL,
+    },
+    {
+        args = {a = {}},
+    },
+}
 
 local function check_v2_compatibility(options)
-    _G._checks_v2_compatible = true
     checks({
         a = {
             b1 = {
@@ -292,180 +553,422 @@ local function check_v2_compatibility(options)
             },
         },
     })
-    _G._checks_v2_compatible = false
-    test:is_deeply(options, {a={b1={c=nil}, b2={c=nil}}}, 'v2.x compatibility, options == {a={b1={c=nil}, b2={c=nil}}}')
-end
-check_v2_compatibility()
-check_v2_compatibility{}
-check_v2_compatibility(box.NULL)
-check_v2_compatibility{a = {}}
 
-local _l_excess_checks = 2 + debug.getinfo(1).currentline
-function fn_excess_checks(arg1)
-    checks('?number', '?string')
+    t.assert_equals(
+        options,
+        {
+            a = {
+                b1 = { c = nil },
+                b2 = { c = nil }
+            }
+        }, 'checks modifies options')
 end
-test_err(test, 'fn_excess_checks()',
-    _l_excess_checks,
-    'checks: excess check, absent argument')
 
-local _l_missing_checks = 2 + debug.getinfo(1).currentline
-function fn_missing_checks(arg1, arg2)
-    checks('?number')
-end
-test_err(test, 'fn_missing_checks()',
-    _l_missing_checks,
-    'checks: argument "arg2" is not checked')
+for _, case in pairs(options_v2_cases) do
+    -- dots in test case name are not expected
+    local name = ('test_options_v2_compatibility_%s'):format(json.encode(case.args)):gsub('%.', '_')
 
-local _l_bad_check_type_1 = 2 + debug.getinfo(1).currentline
-function bad_check_type_1(arg1, arg2)
-    checks("?string", 5)
-end
-test_err(test, 'bad_check_type_1()',
-    _l_bad_check_type_1,
-    'checks: type "number" is not supported')
+    g.before_test(name, function(_)
+        rawset(_G, '_checks_v2_compatible', true)
+    end)
 
-local _l_bad_check_type_2 = 2 + debug.getinfo(1).currentline
-function bad_check_type_2(arg1, arg2)
-    checks({param = 5})
+    g[name] = function(_)
+        check_v2_compatibility(case.args)
+    end
+
+    g.after_test(name, function(_)
+        rawset(_G, '_checks_v2_compatible', false)
+    end)
 end
-test_err(test, 'bad_check_type_2()',
-    _l_bad_check_type_2,
-    'checks: type "number" is not supported')
 
 ------------------------------------------------------------------------------
-
-function fn_int64(arg)
+function testdata.fn_int64(arg) -- luacheck: no unused args
     checks('int64')
 end
 
-function fn_uint64(arg)
+function testdata.fn_uint64(arg) -- luacheck: no unused args
     checks('uint64')
 end
 
-local function test_ret(test, code, should_succeed)
-    local fn = loadstring(code)
-    test:is(pcall(fn), should_succeed, code .. ' - ' .. (should_succeed and 'valid' or 'invalid'))
-end
+local uuid = require('uuid')
+testdata.myid = uuid()
 
-test_ret(test, 'fn_int64(0)', true)
-test_ret(test, 'fn_int64( 1)', true)
-test_ret(test, 'fn_int64(-1)', true)
-test_ret(test, 'fn_int64( 0.5)', false)
-
-test_ret(test, 'fn_int64(-2^53)', false)
-test_ret(test, 'fn_int64(-2^53+1)', true)
-test_ret(test, 'fn_int64( 2^53-1)', true)
-test_ret(test, 'fn_int64( 2^53)', false)
-test_ret(test, 'fn_int64( 0/0)', false) -- NaN
-test_ret(test, 'fn_int64( 1/0)', false) -- +Inf
-test_ret(test, 'fn_int64(-1/0)', false) -- -Inf
-
-test_ret(test, 'fn_int64(-1e16)', false)
-test_ret(test, 'fn_int64(-1e15)', true)
-test_ret(test, 'fn_int64( 1e15)', true)
-test_ret(test, 'fn_int64( 1e16)', false)
-
-test_ret(test, 'fn_int64(-9223372036854775808LL)', true) -- LLONG_MIN
-test_ret(test, 'fn_int64( 9223372036854775807LL)', true) -- LLONG_MAX
-test_ret(test, 'fn_int64( 9223372036854775808ULL)', false) -- 2^63
-test_ret(test, 'fn_int64(18446744073709551615ULL)', false) -- ULLONG_MAX
-test_ret(test, 'fn_int64(tonumber64( "9223372036854775807"))', true)
-test_ret(test, 'fn_int64(tonumber64( "9223372036854775808"))', false)
-test_ret(test, 'fn_int64(tonumber64("-9223372036854775808"))', true)
-
-test_ret(test, 'fn_uint64( 0)', true)
-test_ret(test, 'fn_uint64( 1)', true)
-test_ret(test, 'fn_uint64(-1)', false)
-test_ret(test, 'fn_uint64( 0.5)', false)
-test_ret(test, 'fn_uint64( 2^53-1)', true)
-test_ret(test, 'fn_uint64( 2^53)', false)
-test_ret(test, 'fn_uint64( 2^53+1)', false)
-test_ret(test, 'fn_uint64( 1e15)', true)
-test_ret(test, 'fn_uint64( 1e-1)', false)
-test_ret(test, 'fn_uint64( 1e16)', false)
-test_ret(test, 'fn_uint64( 0/0)', false) -- NaN
-test_ret(test, 'fn_uint64( 1/0)', false) -- +Inf
-test_ret(test, 'fn_uint64(-1/0)', false) -- -Inf
-
-test_ret(test, 'fn_uint64(-9223372036854775808LL)', false) -- LLONG_MIN
-test_ret(test, 'fn_uint64( 9223372036854775807LL)', true) -- LLONG_MAX
-test_ret(test, 'fn_uint64( 9223372036854775808ULL)', true) -- 2^63
-test_ret(test, 'fn_uint64(18446744073709551615ULL)', true) -- ULLONG_MAX
-test_ret(test, 'fn_uint64(tonumber64( "9223372036854775807"))', true)
-test_ret(test, 'fn_uint64(tonumber64( "9223372036854775808"))', true)
-test_ret(test, 'fn_uint64(tonumber64("-9223372036854775808"))', false)
-
-------------------------------------------------------------------------------
-
-uuid = require('uuid')
-myid = uuid()
-
-function fn_uuid(arg)
+function testdata.fn_uuid(arg) -- luacheck: no unused args
     checks('uuid')
 end
 
-function fn_uuid_str(arg)
+function testdata.fn_uuid_str(arg) -- luacheck: no unused args
     checks('uuid_str')
 end
 
-function fn_uuid_bin(arg)
+function testdata.fn_uuid_bin(arg) -- luacheck: no unused args
     checks('uuid_bin')
 end
 
-test_ret(test, 'fn_uuid(myid)', true)
-test_ret(test, 'fn_uuid(myid:str())', false)
-test_ret(test, 'fn_uuid(myid:bin())', false)
-
-test_ret(test, 'fn_uuid_str(myid)', false)
-test_ret(test, 'fn_uuid_str(myid:str())', true)
-test_ret(test, 'fn_uuid_str(myid:str():upper())', true)
-test_ret(test, 'fn_uuid_str("00000000-0000-0000-e000-000000000000")', false) -- illegal variant
-test_ret(test, 'fn_uuid_str("00000000-0000-0000-f000-000000000000")', false) -- illegal variant
-test_ret(test, 'fn_uuid_str("00000000-0000-0000-Z000-000000000000")', false) -- illegal letter
-test_ret(test, 'fn_uuid_str("00000000-0000-0000#0000-000000000000")', false) -- illegal format
-test_ret(test, 'fn_uuid_str("00000000-0000-0000-0000-00000000000")', false) -- illegal len
-test_ret(test, 'fn_uuid_str("00000000-0000-0000-0000-0000000000000")', false) -- illegal len
-test_ret(test, 'fn_uuid_str(myid:bin())', false)
-
-test_ret(test, 'fn_uuid_bin(myid)', false)
-test_ret(test, 'fn_uuid_bin(myid:str())', false)
-test_ret(test, 'fn_uuid_bin(myid:bin())', true)
-
--- various cdata
-test_ret(test, 'fn_int64(myid)', false)
-test_ret(test, 'fn_uint64(myid)', false)
-test_ret(test, 'fn_uuid(1ULL)', false)
-
-------------------------------------------------------------------------------
-
-function fn_tuple(arg)
+function testdata.fn_tuple(arg) -- luacheck: no unused args
     checks('tuple')
 end
 
-test_ret(test, 'fn_tuple(box.tuple.new({1, 2, 3}))', true)
-test_ret(test, 'fn_tuple({1, 2, 3})', false)
-test_ret(test, 'fn_tuple(1ULL)', false)
-test_ret(test, 'fn_tuple(1)', false)
-
-------------------------------------------------------------------------------
-
-local has_decimal, decimal = pcall(require, 'decimal')
-
-if has_decimal and decimal.is_decimal then
-    function fn_decimal(arg)
-        checks('decimal')
-    end
-
-    test:test('decimal tests', function(test)
-        test:plan(5)
-        test_ret(test, 'fn_decimal(require("decimal").new(123))', true)
-        test_ret(test, 'fn_decimal(require("decimal").new("123"))', true)
-        test_ret(test, 'fn_decimal(123)', false)
-        test_ret(test, 'fn_decimal(1ULL)', false)
-        test_ret(test, 'fn_decimal(1)', false)
-    end)
-else
-    test:skip('decimal is not supported')
+function testdata.fn_decimal(arg) -- luacheck: no unused args
+    checks('decimal')
 end
 
-os.exit(test:check())
+local has_decimal, decimal = pcall(require, 'decimal')
+if has_decimal then
+    testdata.decimal = decimal
+end
+
+local ret_cases = {
+    -- fn_int64
+    {
+        code = 'fn_int64(0)',
+        ok = true,
+    },
+    {
+        code = 'fn_int64( 1)',
+        ok = true,
+    },
+    {
+        code = 'fn_int64(-1)',
+        ok = true,
+    },
+    {
+        code = 'fn_int64( 0.5)',
+        ok = false,
+    },
+
+    {
+        code = 'fn_int64(-2^53)',
+        ok = false,
+    },
+    {
+        code = 'fn_int64(-2^53+1)',
+        ok = true,
+    },
+    {
+        code = 'fn_int64( 2^53-1)',
+        ok = true,
+    },
+    {
+        code = 'fn_int64( 2^53)',
+        ok = false,
+    },
+    {
+        code = 'fn_int64( 0/0)', -- NaN
+        ok = false,
+    },
+    {
+        code = 'fn_int64( 1/0)', -- +Inf
+        ok = false,
+    },
+    {
+        code = 'fn_int64(-1/0)', -- -Inf
+        ok = false,
+    },
+
+    {
+        code = 'fn_int64(-1e16)',
+        ok = false,
+    },
+    {
+        code = 'fn_int64(-1e15)',
+        ok = true,
+    },
+    {
+        code = 'fn_int64( 1e15)',
+        ok = true,
+    },
+    {
+        code = 'fn_int64( 1e16)',
+        ok = false,
+    },
+
+    {
+        code = 'fn_int64(-9223372036854775808LL)', -- LLONG_MIN
+        ok = true,
+    },
+    {
+        code = 'fn_int64( 9223372036854775807LL)', -- LLONG_MAX
+        ok = true,
+    },
+    {
+        code = 'fn_int64( 9223372036854775808ULL)', -- 2^63
+        ok = false,
+    },
+    {
+        code = 'fn_int64(18446744073709551615ULL)', -- ULLONG_MAX
+        ok = false,
+    },
+    {
+        code = 'fn_int64(tonumber64( "9223372036854775807"))',
+        ok = true,
+    },
+    {
+        code = 'fn_int64(tonumber64( "9223372036854775808"))',
+        ok = false,
+    },
+    {
+        code = 'fn_int64(tonumber64("-9223372036854775808"))',
+        ok = true,
+    },
+
+    -- fn_uint64
+    {
+        code = 'fn_uint64( 0)',
+        ok = true,
+    },
+    {
+        code = 'fn_uint64( 1)',
+        ok = true,
+    },
+    {
+        code = 'fn_uint64(-1)',
+        ok = false,
+    },
+    {
+        code = 'fn_uint64( 0.5)',
+        ok = false,
+    },
+    {
+        code = 'fn_uint64( 2^53-1)',
+        ok = true,
+    },
+    {
+        code = 'fn_uint64( 2^53)',
+        ok = false,
+    },
+    {
+        code = 'fn_uint64( 2^53+1)',
+        ok = false,
+    },
+    {
+        code = 'fn_uint64( 1e15)',
+        ok = true,
+    },
+    {
+        code = 'fn_uint64( 1e-1)',
+        ok = false,
+    },
+    {
+        code = 'fn_uint64( 1e16)',
+        ok = false,
+    },
+    {
+        code = 'fn_uint64( 0/0)', -- NaN
+        ok = false,
+    },
+    {
+        code = 'fn_uint64( 1/0)', -- +Inf
+        ok = false,
+    },
+    {
+        code = 'fn_uint64(-1/0)', -- -Inf
+        ok = false,
+    },
+
+    {
+        code = 'fn_uint64(-9223372036854775808LL)', -- LLONG_MIN
+        ok = false,
+    },
+    {
+        code = 'fn_uint64( 9223372036854775807LL)', -- LLONG_MAX
+        ok = true,
+    },
+    {
+        code = 'fn_uint64( 9223372036854775808ULL)', -- 2^63
+        ok = true,
+    },
+    {
+        code = 'fn_uint64(18446744073709551615ULL)', -- ULLONG_MAX
+        ok = true,
+    },
+    {
+        code = 'fn_uint64(tonumber64( "9223372036854775807"))',
+        ok = true,
+    },
+    {
+        code = 'fn_uint64(tonumber64( "9223372036854775808"))',
+        ok = true,
+    },
+    {
+        code = 'fn_uint64(tonumber64("-9223372036854775808"))',
+        ok = false,
+    },
+
+    -- fn_uuid
+    {
+        code = 'fn_uuid(myid)',
+        ok = true,
+        additional_data = {'myid'},
+    },
+    {
+        code = 'fn_uuid(myid:str())',
+        ok = false,
+        additional_data = {'myid'},
+    },
+    {
+        code = 'fn_uuid(myid:bin())',
+        ok = false,
+        additional_data = {'myid'},
+    },
+
+    -- fn_uuid_str
+    {
+        code = 'fn_uuid_str(myid)',
+        ok = false,
+        additional_data = {'myid'},
+    },
+    {
+        code = 'fn_uuid_str(myid:str())',
+        ok = true,
+        additional_data = {'myid'},
+    },
+    {
+        code = 'fn_uuid_str(myid:str():upper())',
+        ok = true,
+        additional_data = {'myid'},
+    },
+    {
+        code = 'fn_uuid_str("00000000-0000-0000-e000-000000000000")', -- illegal variant
+        ok = false,
+    },
+    {
+        code = 'fn_uuid_str("00000000-0000-0000-f000-000000000000")', -- illegal variant
+        ok = false,
+    },
+    {
+        code = 'fn_uuid_str("00000000-0000-0000-Z000-000000000000")', -- illegal letter
+        ok = false,
+    },
+    {
+        code = 'fn_uuid_str("00000000-0000-0000#0000-000000000000")', -- illegal format
+        ok = false,
+    },
+    {
+        code = 'fn_uuid_str("00000000-0000-0000#0000-000000000000")', -- illegal len
+        ok = false,
+    },
+    {
+        code = 'fn_uuid_str("00000000-0000-0000-0000-0000000000000")', -- illegal len
+        ok = false,
+    },
+    {
+        code = 'fn_uuid_str(myid:bin())',
+        ok = false,
+        additional_data = {'myid'},
+    },
+
+    -- fn_uuid_bin
+    {
+        code = 'fn_uuid_bin(myid)',
+        ok = false,
+        additional_data = {'myid'},
+    },
+    {
+        code = 'fn_uuid_bin(myid:str())',
+        ok = false,
+        additional_data = {'myid'},
+    },
+    {
+        code = 'fn_uuid_bin(myid:bin())',
+        ok = true,
+        additional_data = {'myid'},
+    },
+
+    -- various cdata
+    {
+        code = 'fn_int64(myid)',
+        ok = false,
+        additional_data = {'myid'},
+    },
+    {
+        code = 'fn_uint64(myid)',
+        ok = false,
+        additional_data = {'myid'},
+    },
+    {
+        code = 'fn_uuid(1ULL)',
+        ok = false,
+    },
+
+    -- fn_tuple
+    {
+        code = 'fn_tuple(box.tuple.new({1, 2, 3}))',
+        ok = true,
+    },
+    {
+        code = 'fn_tuple({1, 2, 3})',
+        ok = false,
+    },
+    {
+        code = 'fn_tuple(1ULL)',
+        ok = false,
+    },
+    {
+        code = 'fn_tuple(1)',
+        ok = false,
+    },
+
+    -- fn_decimal
+    {
+        skip = not has_decimal,
+        code = 'fn_decimal(decimal.new(123))',
+        ok = true,
+        additional_data = {'decimal'},
+    },
+    {
+        skip = not has_decimal,
+        code = 'fn_decimal(decimal.new("123"))',
+        ok = true,
+        additional_data = {'decimal'},
+    },
+    {
+        skip = not has_decimal,
+        code = 'fn_decimal(123)',
+        ok = false,
+    },
+    {
+        skip = not has_decimal,
+        code = 'fn_decimal(1ULL)',
+        ok = false,
+    },
+    {
+        skip = not has_decimal,
+        code = 'fn_decimal(1)',
+        ok = false,
+    },
+}
+
+for _, case in pairs(ret_cases) do
+    -- dots in test case name are not expected
+    local name = ('test_ret_%s'):format(case.code):gsub('%.', '_')
+
+    local _, _, fn_name = case.code:find('(.-)%(')
+    assert(#fn_name > 0)
+
+    g.before_test(name, function(_)
+        rawset(_G, fn_name, testdata[fn_name])
+        if case.additional_data ~= nil then
+            for _, v in pairs(case.additional_data) do
+                rawset(_G, v, testdata[v])
+            end
+        end
+    end)
+
+    g[name] = function(_)
+        t.skip_if(case.skip, "type unsupported")
+
+        local fn = loadstring(case.code)
+        local ok, err = pcall(fn)
+        t.assert_equals(case.ok, ok, err)
+    end
+
+    g.after_test(name, function(_)
+        rawset(_G, fn_name, nil)
+        if case.additional_data ~= nil then
+            for _, v in pairs(case.additional_data) do
+                rawset(_G, v, nil)
+            end
+        end
+    end)
+end
