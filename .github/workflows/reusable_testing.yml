@@ -28,4 +28,6 @@ jobs:
         # dependencies when migrating to other OS version.
         run: sudo dpkg -i tarantool*.deb
 
+      - run: make lint
+
       - run: make test
