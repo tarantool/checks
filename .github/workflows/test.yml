@@ -17,6 +17,9 @@ jobs:
         with:
           tarantool-version: ${{ matrix.tarantool }}
 
+      - name: Run static analysis
+        run: make lint
+
       - name: Run regression testing
         run: make test
 
