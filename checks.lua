@@ -19,7 +19,7 @@ local _qualifiers_cache = {
 }
 
 local function is_tarantool()
-    return _G['_TARANTOOL'] ~= nil
+    return rawget(_G, '_TARANTOOL') ~= nil
 end
 
 --- Check that string (or substring) starts with given string
@@ -113,7 +113,7 @@ local function check_string_type(value, expected_type)
             return true
         end
 
-        local checker = _G.checkers[typ]
+        local checker = rawget(_G, 'checkers')[typ]
         if type(checker) == 'function' and checker(value) == true then
             return true
         end
@@ -156,7 +156,7 @@ local function check_table_type(tbl, expected_fields)
                 return nil, string.format(efmt, '%s'..keyname_fmt(expected_key), '%s')
             end
 
-            if _G._checks_v2_compatible and value == nil then
+            if rawget(_G, '_checks_v2_compatible') and value == nil then
                 value = {}
                 tbl[expected_key] = value
             end
@@ -232,7 +232,7 @@ local function checks(...)
                 error(err, level)
             end
 
-            if _G._checks_v2_compatible and value == nil then
+            if rawget(_G, '_checks_v2_compatible') and value == nil then
                 value = {}
                 debug.setlocal(level, i, value)
             end
@@ -253,9 +253,13 @@ local function checks(...)
     end
 end
 
-_G.checks = checks
-_G.checkers = rawget(_G, 'checkers') or {}
-_G._checks_v2_compatible = rawget(_G, '_checks_v2_compatible') or false
+rawset(_G, 'checks', checks)
+
+local checkers = rawget(_G, 'checkers') or {}
+rawset(_G, 'checkers', checkers)
+
+local _checks_v2_compatible = rawget(_G, '_checks_v2_compatible') or false
+rawset(_G, '_checks_v2_compatible', _checks_v2_compatible)
 
 local ffi = require('ffi')
 function checkers.uint64(arg)
