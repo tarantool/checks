@@ -7,7 +7,7 @@ endif
 all:
 	@echo "Available commands: .rocks, lint, test, perf, clean"
 
-.rocks: rockspecs/checks-scm-1.rockspec
+.rocks: checks-scm-1.rockspec
 	$(TTCTL) rocks make
 	$(TTCTL) rocks install luacheck 0.26.0
 	$(TTCTL) rocks install luatest 0.5.7
