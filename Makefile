@@ -18,11 +18,11 @@ lint: .rocks
 
 .PHONY: test
 test: .rocks
-	.rocks/bin/luatest -c -v ./test.lua
+	.rocks/bin/luatest -c -v ./test/test.lua
 
 .PHONY: perf
 perf:
-	.rocks/bin/luatest -c ./perftest.lua
+	.rocks/bin/luatest -c ./test/perftest.lua
 
 .PHONY: clean
 clean:
