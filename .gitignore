@@ -8,3 +8,5 @@ Testing/
 *.dylib
 packpack
 .rocks
+
+*.lua.c
