@@ -8,12 +8,27 @@ on:
       - '*'
 
 jobs:
+  # Run not only on tags, otherwise dependent job will skip.
+  version-check:
+    # Skip pull request jobs when the source branch is in the same
+    # repository.
+    if: |
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check module version
+        uses: tarantool/actions/check-module-version@igrishnov/gh-204-add-hardcoded-versioning-support
+        with:
+          module-name: 'checks'
+
   package:
     # Skip pull request jobs when the source branch is in the same
     # repository.
     if: |
       github.event_name == 'push' ||
       github.event.pull_request.head.repo.full_name != github.repository
+    needs: version-check
     runs-on: ubuntu-20.04
 
     strategy:

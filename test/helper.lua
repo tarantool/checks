@@ -7,5 +7,5 @@ end
 
 local checks = require('checks')
 
-local package_source = debug.getinfo(checks).source
+local package_source = debug.getinfo(checks.checks).source
 assert(package_source:match('^@builtin') == nil, 'Run tests for repository checks package')

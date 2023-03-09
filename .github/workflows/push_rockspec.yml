@@ -14,9 +14,19 @@ env:
   ROCK_NAME: "checks"
 
 jobs:
+  # Run not only on tags, otherwise dependent job will skip.
+  version-check:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check module version
+        uses: tarantool/actions/check-module-version@igrishnov/gh-204-add-hardcoded-versioning-support
+        with:
+          module-name: 'checks'
+
   push-scm-rockspec:
     runs-on: [ ubuntu-20.04 ]
     if: github.ref == 'refs/heads/master' && github.event.workflow_run.conclusion == 'success'
+    needs: version-check
     steps:
       - uses: actions/checkout@master
 
@@ -28,6 +38,7 @@ jobs:
   push-tagged-rockspec:
     runs-on: [ ubuntu-20.04 ]
     if: startsWith(github.ref, 'refs/tags')
+    needs: version-check
     steps:
       - uses: actions/checkout@master
 

@@ -24,6 +24,7 @@ build = {
     type = 'builtin',
     modules = {
         ['checks'] = 'checks.lua',
+        ['checks.version'] = 'checks/version.lua',
     }
 }
 
