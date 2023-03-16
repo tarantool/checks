@@ -1,1 +1,2 @@
 checks.lua usr/share/tarantool/
+checks usr/share/tarantool/

@@ -1108,3 +1108,7 @@ for _, case in pairs(ret_cases) do
         end
     end)
 end
+
+g.test_version = function()
+    t.assert_type(require('checks')._VERSION, 'string')
+end

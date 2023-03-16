@@ -21,9 +21,11 @@ Easy, terse, readable and fast function arguments type checking.
 %install
 mkdir -p %{br_luapkgdir}
 cp -av checks.lua %{br_luapkgdir}
+cp -rv checks %{br_luapkgdir}
 
 %files
 %{luapkgdir}/checks.lua
+%{luapkgdir}/checks
 %doc README.md
 %{!?_licensedir:%global license %doc}
 %license LICENSE
