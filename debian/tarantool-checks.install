@@ -1,2 +1,4 @@
 checks.lua usr/share/tarantool/
 checks usr/share/tarantool/
+checks.lua usr/share/tarantool/override
+checks usr/share/tarantool/override

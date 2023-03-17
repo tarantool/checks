@@ -23,9 +23,7 @@ jobs:
         with:
           module-name: checks
           version-pre-extraction-hook: |
-            local rock_utils = require('test.rock_utils')
-            rock_utils.remove_builtin('checks')
-            rock_utils.assert_nonbuiltin('checks')
+            require('test.rock_utils').assert_nonbuiltin('checks')
 
   package:
     # Skip pull request jobs when the source branch is in the same

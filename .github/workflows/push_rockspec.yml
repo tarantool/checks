@@ -24,9 +24,7 @@ jobs:
         with:
           module-name: checks
           version-pre-extraction-hook: |
-            local rock_utils = require('test.rock_utils')
-            rock_utils.remove_builtin('checks')
-            rock_utils.assert_nonbuiltin('checks')
+            require('test.rock_utils').assert_nonbuiltin('checks')
 
   push-scm-rockspec:
     runs-on: [ ubuntu-20.04 ]
