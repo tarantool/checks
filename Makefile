@@ -21,7 +21,7 @@ test: .rocks
 	.rocks/bin/luatest -c -v ./test/test.lua
 
 .PHONY: perf
-perf:
+perf: .rocks
 	.rocks/bin/luatest -c ./test/perftest.lua
 
 .PHONY: clean
