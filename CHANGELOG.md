@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Build rock with cmake.
+- Override built-in checks, if installed.
 
 ## [3.2.0] - 2023-01-27
 ### Added
