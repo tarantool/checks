@@ -12,3 +12,5 @@ packpack
 *.lua.c
 
 packpack
+
+build.luarocks

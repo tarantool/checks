@@ -21,10 +21,8 @@ dependencies = {
 }
 
 build = {
-    type = 'builtin',
-    modules = {
-        ['checks'] = 'checks.lua',
-        ['checks.version'] = 'checks/version.lua',
-    }
+    type = 'cmake',
+    variables = {
+        TARANTOOL_INSTALL_LUADIR = '$(LUADIR)',
+    },
 }
-
