@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Versioning supported.
 
+### Changed
+
+- Build rock with cmake.
+
 ## [3.2.0] - 2023-01-27
 ### Added
 
