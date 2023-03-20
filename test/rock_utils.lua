@@ -10,8 +10,16 @@ local function traverse_rock(func, name)
     end
 end
 
+-- Package may have table cross-references.
+local MAX_DEPTH = 8
+
 -- Package functions contain useful debug info.
-local function traverse_pkg_func(func, name, pkg)
+local function traverse_pkg_func(func, name, pkg, max_depth)
+    max_depth = max_depth or MAX_DEPTH
+    if max_depth <= 0 then
+        return
+    end
+
     if type(pkg) == 'function' then
         func(name, pkg)
         return
@@ -22,17 +30,21 @@ local function traverse_pkg_func(func, name, pkg)
     end
 
     for _, v in pairs(pkg) do
-        traverse_pkg_func(func, name, v)
+        traverse_pkg_func(func, name, v, max_depth - 1)
     end
 
     local mt = getmetatable(pkg)
-    if mt.__call ~= nil then
+    if mt ~= nil and mt.__call ~= nil then
         func(name, mt.__call)
     end
 end
 
-local function remove_builtin_pkg(name, _)
+local function remove_loaded_pkg(name, _)
     package.loaded[name] = nil
+end
+
+local function remove_builtin_pkg(name, _)
+    remove_loaded_pkg(name)
     if loaders_ok then
         loaders.builtin[name] = nil
     end
@@ -62,6 +74,15 @@ local function remove_builtin_rock(name)
     traverse_rock(remove_builtin_pkg, name)
 end
 
+local function remove_loaded_rock(name)
+    traverse_rock(remove_loaded_pkg, name)
+end
+
+local function remove_override_rock(name)
+    loaders.override_builtin_disable()
+    traverse_rock(remove_loaded_pkg, name)
+end
+
 local function assert_nonbuiltin_rock(name)
     require(name)
     traverse_rock(assert_nonbuiltin_pkg, name)
@@ -76,4 +97,6 @@ return {
     assert_builtin = assert_builtin_rock,
     assert_nonbuiltin = assert_nonbuiltin_rock,
     remove_builtin = remove_builtin_rock,
+    remove_loaded = remove_loaded_rock,
+    remove_override = remove_override_rock,
 }
