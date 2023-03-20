@@ -356,4 +356,15 @@ end
 
 add_ffi_type_checker('interval', 'struct interval')
 
-return checks
+return setmetatable(
+    {
+        checks = checks,
+        _VERSION = require('checks.version'),
+    },
+    {
+        -- Made export table callable for backward compatibility.
+        __call = function(_, ...)
+            return checks(...)
+        end
+    }
+)
