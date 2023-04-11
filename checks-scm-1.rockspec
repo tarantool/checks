@@ -13,7 +13,7 @@ description = {
         passed to a Lua function in a fast and unobtrusive way.
     ]],
     homepage = "https://github.com/tarantool/checks",
-    license = "BSD",
+    license = "MIT",
 }
 
 dependencies = {
