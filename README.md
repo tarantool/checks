@@ -4,7 +4,10 @@
 
 This library declares a `checks()` function and a `checkers` table, which
 allow to check the parameters passed to a Lua function in a fast and
-unobtrusive  way.
+unobtrusive way.
+
+Starting with 2.11.0, Tarantool embeds the `checks` module.
+You can learn more about the module's API from the [documentation page](https://www.tarantool.io/doc/latest/reference/reference_lua/checks/).
 
 ---
 
