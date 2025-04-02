@@ -8,12 +8,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tarantool: ['1.10', '2.5', '2.6', '2.7', '2.8', '2.10']
+        tarantool: ['1.10','2.11', '3.3']
 
-    runs-on: [ubuntu-20.04]
+    runs-on: [ubuntu-22.04]
     steps:
-      - uses: actions/checkout@v3
-      - uses: tarantool/setup-tarantool@v2
+      - uses: actions/checkout@v4
+      - uses: tarantool/setup-tarantool@v3
         with:
           tarantool-version: ${{ matrix.tarantool }}
 
@@ -36,9 +36,9 @@ jobs:
     strategy:
       fail-fast: false
 
-    runs-on: [ubuntu-20.04]
+    runs-on: [ubuntu-22.04]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup LuaJIT
         run: sudo apt install -y luajit
