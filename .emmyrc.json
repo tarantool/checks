@@ -14,7 +14,6 @@
     "disable": [
       "need-check-nil",
       "redefined-local",
-      "undefined-field",
       "unnecessary-if",
       "unresolved-require",
       "unused"
