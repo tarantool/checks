@@ -2,8 +2,9 @@
 ---passed to a Lua function. It is designed to reveal mistakes in code, not to
 ---validate user input.
 ---
----The module table itself is callable: `checks(type_1, ...)` is equivalent to
----`checks.checks(type_1, ...)`.
+---The returned module table is callable: `checks(type_1, ...)` is equivalent
+---to `checks.checks(type_1, ...)`. It exposes the `checks` function and the
+---`_VERSION` string field.
 ---
 ---@alias checks.qualifier string|table<any, checks.qualifier>
 local ffi = require('ffi')
@@ -449,9 +450,6 @@ end
 
 add_ffi_type_checker('interval', 'struct interval')
 
----@class checks
----@field checks fun(...: checks.qualifier|number) Checks the arguments of the calling function.
----@field _VERSION string The module version.
 local M = setmetatable(
     {
         checks = checks,

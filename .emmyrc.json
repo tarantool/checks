@@ -12,7 +12,6 @@
   },
   "diagnostics": {
     "disable": [
-      "call-non-callable",
       "duplicate-require",
       "need-check-nil",
       "param-type-mismatch",
