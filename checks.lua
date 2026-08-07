@@ -317,8 +317,6 @@ rawset(_G, 'checkers', checkers)
 local _checks_v2_compatible = rawget(_G, '_checks_v2_compatible') or false
 rawset(_G, '_checks_v2_compatible', _checks_v2_compatible)
 
-local ffi = require('ffi')
-
 ---Check whether the specified value is a `uint64` value: an integer Lua number
 ---in the range from 0 to 2^53-1 (inclusive), a cdata `ctype<uint64_t>`, or a
 ---cdata `ctype<int64_t>` in the range from 0 to `LLONG_MAX`.
