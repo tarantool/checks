@@ -13,7 +13,6 @@
   "diagnostics": {
     "disable": [
       "need-check-nil",
-      "param-type-mismatch",
       "redefined-local",
       "undefined-field",
       "unnecessary-if",

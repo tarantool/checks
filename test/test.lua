@@ -456,6 +456,7 @@ for _, case in pairs(err_cases) do
 
     g[name] = function(_)
         local fn = loadstring(case.code)
+        ---@cast fn function
         local ok, err = pcall(fn)
 
         if case.error == nil then
@@ -1095,6 +1096,7 @@ for _, case in pairs(ret_cases) do
         t.skip_if(case.skip, "type unsupported")
 
         local fn = loadstring(case.code)
+        ---@cast fn function
         local ok, err = pcall(fn)
         t.assert_equals(case.ok, ok, err)
     end
