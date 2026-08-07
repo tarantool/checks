@@ -171,11 +171,13 @@ local function check_table_type(tbl, expected_fields)
         if type(expected_type) == 'string' then
             local ok, efmt = check_string_type(value, expected_type)
             if not ok then
+                ---@cast efmt string
                 return nil, string.format(efmt, '%s'..keyname_fmt(expected_key), '%s')
             end
         elseif type(expected_type) == 'table' then
             local ok, efmt = check_string_type(value, '?table')
             if not ok then
+                ---@cast efmt string
                 return nil, string.format(efmt, '%s'..keyname_fmt(expected_key), '%s')
             end
 
@@ -186,6 +188,7 @@ local function check_table_type(tbl, expected_fields)
 
             local ok, efmt = check_table_type(value, expected_type)
             if not ok then
+                ---@cast efmt string
                 return nil, string.format(efmt, '%s'..keyname_fmt(expected_key), '%s')
             end
         else
@@ -229,10 +232,11 @@ end
 local function checks(...)
     local skip = 0
 
-    ---@type number
+    ---@type integer
     local level = 1
     local first = ...
     if type(first) == 'number' then
+        ---@cast first integer
         level = first
         skip = 1
     end
@@ -257,6 +261,7 @@ local function checks(...)
             local ok, efmt = check_string_type(value, expected_type)
             if not ok then
                 local info = debug.getinfo(level, 'nl')
+                ---@cast efmt string
                 local err = string.format(efmt, '#'..tostring(i), info.name)
                 error(err, level)
             end
@@ -265,18 +270,23 @@ local function checks(...)
             local ok, efmt = check_string_type(value, '?table')
             if not ok then
                 local info = debug.getinfo(level, 'nl')
+                ---@cast efmt string
                 local err = string.format(efmt, '#'..tostring(i), info.name)
                 error(err, level)
             end
 
             if rawget(_G, '_checks_v2_compatible') and value == nil then
                 value = {}
+                -- In emmylua-check 0.22.0 the debug.setlocal index
+                -- parameter is mistyped as `string`; it is an integer.
+                ---@diagnostic disable-next-line: param-type-mismatch
                 debug.setlocal(level, i, value)
             end
 
             local ok, efmt = check_table_type(value, expected_type)
             if not ok then
                 local info = debug.getinfo(level, 'nl')
+                ---@cast efmt string
                 local err = string.format(efmt, argname, info.name)
                 error(err, level)
             end
