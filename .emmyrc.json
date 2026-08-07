@@ -12,7 +12,6 @@
   },
   "diagnostics": {
     "disable": [
-      "duplicate-require",
       "need-check-nil",
       "param-type-mismatch",
       "redefined-local",
