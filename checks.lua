@@ -1,3 +1,15 @@
+---The `checks` module provides the ability to check the types of arguments
+---passed to a Lua function. It is designed to reveal mistakes in code, not to
+---validate user input.
+---
+---The module table itself is callable: `checks(type_1, ...)` is equivalent to
+---`checks.checks(type_1, ...)`.
+---
+---@alias checks.qualifier string|table<any, checks.qualifier>
+---
+---@class checks
+---@field checks fun(...: checks.qualifier) Checks the arguments of the calling function.
+---@field _VERSION string The module version.
 local ffi = require('ffi')
 
 ffi.cdef[[
@@ -18,14 +30,14 @@ local _qualifiers_cache = {
     -- },
 }
 
---- Check that string (or substring) starts with given string
--- Optionally restricting the matching with the given offsets
--- @function startswith
--- @string    inp     original string
--- @string    head    the substring to check against
--- @int[opt]  _start  start index of matching boundary
--- @int[opt]  _end    end index of matching boundary
--- @returns           boolean
+---Check that the given string (or substring) starts with the given string,
+---optionally restricting the matching with the given offsets.
+---
+---@param inp string The original string.
+---@param head string The substring to check against.
+---@param _start? integer Start index of the matching boundary (default: `1`).
+---@param _end? integer End index of the matching boundary (default: `#inp`).
+---@return boolean `true` if `inp` starts with `head`, `false` otherwise.
 local function startswith(inp, head, _start, _end)
     if type(inp) ~= 'string' then
         error(err_string_arg:format(1, 'string.startswith', 'string',
@@ -69,6 +81,13 @@ local function startswith(inp, head, _start, _end)
 end
 
 
+---Check that a value conforms to the given string type qualifier.
+---
+---@param value any The value to check.
+---@param expected_type string The string type qualifier, e.g. `'string'`,
+---    `'?number|string'`, or `'?'` for any type.
+---@return boolean? `true` if the value conforms to the type qualifier.
+---@return string? error_message The formatted error message if the check fails.
 local function check_string_type(value, expected_type)
     -- 1. Check any value.
     if expected_type == '?' then
@@ -123,6 +142,11 @@ local function check_string_type(value, expected_type)
     )
 end
 
+---Format a table key for an error message: `.key` for strings and `[n]`
+---for numbers.
+---
+---@param key any The table key.
+---@return string The formatted key name.
 local function keyname_fmt(key)
     if type(key) == 'string' then
         return string.format('.%s', key)
@@ -133,6 +157,12 @@ local function keyname_fmt(key)
     end
 end
 
+---Check that a table conforms to the given table type qualifier.
+---
+---@param tbl table? The table to check.
+---@param expected_fields table<any, checks.qualifier> The table type qualifier.
+---@return boolean? `true` if the table conforms to the type qualifier.
+---@return string? error_message The formatted error message if the check fails.
 local function check_table_type(tbl, expected_fields)
     if tbl == nil then
         tbl = nil
@@ -187,6 +217,17 @@ local function check_table_type(tbl, expected_fields)
     return true
 end
 
+---Checks that the arguments of the calling function conform to the specified
+---types. Must be called at the top of the function being checked; each type
+---qualifier corresponds to the argument at the same position.
+---
+---String qualifiers check Lua types, Tarantool-specific types (`uint64`,
+---`int64`, `decimal`, `uuid`, etc.), metatable `__type` values, and custom
+---checker names; they can be combined into union types (`'number|string'`) and
+---made optional (`'?string'`). Table qualifiers validate the values of a table
+---argument.
+---
+---@param ... checks.qualifier Type qualifiers, one per argument to check.
 local function checks(...)
     local skip = 0
 
@@ -249,15 +290,41 @@ local function checks(...)
     end
 end
 
+---The `checks` function is also available as a global, so it can be used
+---without loading the module (Tarantool 2.11.0 and later).
 rawset(_G, 'checks', checks)
 
+---The `checkers` global table provides access to checkers for different types.
+---It can be extended with custom checkers that perform arbitrary validations.
+---
+---@class checks.checkers
+---@field datetime fun(arg: any): boolean Check that the value is a datetime object.
+---@field decimal fun(arg: any): boolean Check that the value has the decimal type.
+---@field error fun(arg: any): boolean Check that the value is an error object.
+---@field int64 fun(arg: any): boolean Check that the value is an int64 value.
+---@field interval fun(arg: any): boolean Check that the value is an interval object.
+---@field tuple fun(arg: any): boolean Check that the value is a tuple.
+---@field uint64 fun(arg: any): boolean Check that the value is a uint64 value.
+---@field uuid fun(arg: any): boolean Check that the value is a uuid object.
+---@field uuid_bin fun(arg: any): boolean Check that the value is a uuid as a 16-byte binary string.
+---@field uuid_str fun(arg: any): boolean Check that the value is a uuid as a 36-byte hexadecimal string.
 local checkers = rawget(_G, 'checkers') or {}
 rawset(_G, 'checkers', checkers)
 
+---When set to `true`, substitutes `nil` table arguments with empty tables for
+---backward compatibility with v2.1.
+---@type boolean
 local _checks_v2_compatible = rawget(_G, '_checks_v2_compatible') or false
 rawset(_G, '_checks_v2_compatible', _checks_v2_compatible)
 
 local ffi = require('ffi')
+
+---Check whether the specified value is a `uint64` value: an integer Lua number
+---in the range from 0 to 2^53-1 (inclusive), a cdata `ctype<uint64_t>`, or a
+---cdata `ctype<int64_t>` in the range from 0 to `LLONG_MAX`.
+---
+---@param arg any The value to check.
+---@return boolean `true` if the value is a `uint64` value, `false` otherwise.
 function checkers.uint64(arg)
     if type(arg) == 'number' then
         -- Double floating point format has 52 fraction bits
@@ -277,6 +344,13 @@ function checkers.uint64(arg)
     return false
 end
 
+---Check whether the specified value is an `int64` value: an integer Lua
+---number in the range from -2^53+1 to 2^53-1 (inclusive), a cdata
+---`ctype<int64_t>`, or a cdata `ctype<uint64_t>` in the range from 0 to
+---`LLONG_MAX`.
+---
+---@param arg any The value to check.
+---@return boolean `true` if the value is an `int64` value, `false` otherwise.
 function checkers.int64(arg)
     if type(arg) == 'number' then
         return (arg > -2^53) and (arg < 2^53) and (math.floor(arg) == arg)
@@ -293,6 +367,7 @@ function checkers.int64(arg)
     return false
 end
 
+---Check whether the specified value is a tuple.
 local has_box = rawget(_G, 'box') ~= nil
 if has_box and box.tuple ~= nil then
     checkers.tuple = box.tuple.is
@@ -303,11 +378,19 @@ if has_decimal then
     -- There is a decimal.is_decimal check since 2.4, but we
     -- reimplement it here to support older versions which have decimal.
     local cdata_t = ffi.typeof(decimal.new(0))
+    ---Check whether the specified value has the decimal type.
+    ---
+    ---@param arg any The value to check.
+    ---@return boolean `true` if the value has the decimal type, `false` otherwise.
     checkers.decimal = function(arg)
         return ffi.istype(cdata_t, arg)
     end
 end
 
+---Register a checker for a cdata type checked via FFI.
+---
+---@param checks_type string The name of the checker to register in `checkers`.
+---@param c_type string The C type name, e.g. `'struct tt_uuid'`.
 local function add_ffi_type_checker(checks_type, c_type)
     local has_cdata_t, cdata_t = pcall(ffi.typeof, c_type)
     if has_cdata_t then
@@ -322,6 +405,11 @@ end
 -- https://github.com/tarantool/tarantool/blob/7682d34162be34648172d91008e9185301bce8f6/src/lua/uuid.lua#L29
 add_ffi_type_checker('uuid', 'struct tt_uuid')
 
+---Check whether the specified value is a uuid represented by a 36-byte
+---hexadecimal string.
+---
+---@param arg any The value to check.
+---@return boolean `true` if the value is a uuid string, `false` otherwise.
 function checkers.uuid_str(arg)
     if type(arg) == 'string' and #arg == 36 then
         local match = arg:match(
@@ -339,6 +427,11 @@ function checkers.uuid_str(arg)
     end
 end
 
+---Check whether the specified value is a uuid represented by a 16-byte binary
+---string.
+---
+---@param arg any The value to check.
+---@return boolean `true` if the value is a uuid binary string, `false` otherwise.
 function checkers.uuid_bin(arg)
     if type(arg) == 'string' and #arg == 16 then
         return true
@@ -349,6 +442,7 @@ end
 
 add_ffi_type_checker('error', 'struct error')
 
+---Check whether the specified value is a datetime object.
 local has_datetime, datetime = pcall(require, 'datetime')
 if has_datetime then
     checkers.datetime = datetime.is_datetime
@@ -356,6 +450,7 @@ end
 
 add_ffi_type_checker('interval', 'struct interval')
 
+---@type checks
 return setmetatable(
     {
         checks = checks,
