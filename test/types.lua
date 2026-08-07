@@ -1,0 +1,6 @@
+---@meta
+---
+--- Tarantool extensions to the standard Lua `table` library.
+---
+---@class tablelib
+---@field deepcopy fun(t: table): table Deep-copies a table.
