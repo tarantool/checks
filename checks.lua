@@ -6,10 +6,6 @@
 ---`checks.checks(type_1, ...)`.
 ---
 ---@alias checks.qualifier string|table<any, checks.qualifier>
----
----@class checks
----@field checks fun(...: checks.qualifier) Checks the arguments of the calling function.
----@field _VERSION string The module version.
 local ffi = require('ffi')
 
 ffi.cdef[[
@@ -227,13 +223,16 @@ end
 ---made optional (`'?string'`). Table qualifiers validate the values of a table
 ---argument.
 ---
----@param ... checks.qualifier Type qualifiers, one per argument to check.
+---@param ... checks.qualifier|number Type qualifiers, one per argument to
+---    check. The first argument may also be a stack level (used internally).
 local function checks(...)
     local skip = 0
 
+    ---@type number
     local level = 1
-    if type(...) == 'number' then
-        level = ...
+    local first = ...
+    if type(first) == 'number' then
+        level = first
         skip = 1
     end
     level = level + 1 -- escape the checks level
@@ -450,8 +449,10 @@ end
 
 add_ffi_type_checker('interval', 'struct interval')
 
----@type checks
-return setmetatable(
+---@class checks
+---@field checks fun(...: checks.qualifier|number) Checks the arguments of the calling function.
+---@field _VERSION string The module version.
+local M = setmetatable(
     {
         checks = checks,
         _VERSION = require('checks.version'),
@@ -463,3 +464,5 @@ return setmetatable(
         end
     }
 )
+
+return M
