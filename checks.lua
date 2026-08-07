@@ -92,6 +92,7 @@ local function check_string_type(value, expected_type)
     end
 
     -- 2. Parse type qualifier
+    ---@type { [integer]: string, optional: boolean }?
     local qualifier = _qualifiers_cache[expected_type]
     if qualifier == nil then
         qualifier = { optional = false }
