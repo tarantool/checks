@@ -14,8 +14,7 @@
     "disable": [
       "need-check-nil",
       "redefined-local",
-      "unresolved-require",
-      "unused"
+      "unresolved-require"
     ],
     "globals": [
       "box"

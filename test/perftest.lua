@@ -134,7 +134,7 @@ for _, case in pairs(cases) do
     local name = ('test_%s_%s'):format(json.encode(case.check), case.argtype):gsub('%.', '_')
 
     g[name] = function(_)
-        local fn = function(arg) -- luacheck: no unused args
+        local fn = function(_arg)
             checks(case.check)
         end
 

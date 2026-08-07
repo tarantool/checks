@@ -19,41 +19,41 @@ end
 local testdata = {}
 
 local _l_number_optstring = 2 + debug.getinfo(1).currentline
-function testdata.fn_number_optstring(arg1, arg2) -- luacheck: no unused args
+function testdata.fn_number_optstring(_arg1, _arg2)
     checks('number', '?string')
 end
 
 local _l_number_or_string = 2 + debug.getinfo(1).currentline
-function testdata.fn_number_or_string(arg1) -- luacheck: no unused args
+function testdata.fn_number_or_string(_arg1)
     checks('number|string')
 end
 
 local _l_positive_number = 2 + debug.getinfo(1).currentline
-function testdata.fn_positive_number(arg1) -- luacheck: no unused args
+function testdata.fn_positive_number(_arg1)
     checks('positive_number')
 end
 
-function testdata.fn_anytype(arg1) -- luacheck: no unused args
+function testdata.fn_anytype(_arg1)
     checks('?')
 end
 
 local _l_nil_or_number_or_string = 2 + debug.getinfo(1).currentline
-function testdata.fn_nil_or_number_or_string(arg1) -- luacheck: no unused args
+function testdata.fn_nil_or_number_or_string(_arg1)
     checks('nil|number|string')
 end
 
 local _l_optnumber_or_optstring = 2 + debug.getinfo(1).currentline
-function testdata.fn_optnumber_or_optstring(arg1) -- luacheck: no unused args
+function testdata.fn_optnumber_or_optstring(_arg1)
     checks('?number|?string')
 end
 
 local _l_varargs = 2 + debug.getinfo(1).currentline
-function testdata.fn_varargs(arg1, ...) -- luacheck: no unused args
+function testdata.fn_varargs(_arg1, ...) -- luacheck: ignore 212
     checks('string')
 end
 
 local _l_options = 2 + debug.getinfo(1).currentline
-function testdata.fn_options(options) -- luacheck: no unused args
+function testdata.fn_options(_options)
     checks({
         mystring = '?string',
         mynumber = '?number',
@@ -61,17 +61,17 @@ function testdata.fn_options(options) -- luacheck: no unused args
 end
 
 local _l_array = 2 + debug.getinfo(1).currentline
-function testdata.fn_array(array) -- luacheck: no unused args
+function testdata.fn_array(_array)
     checks({'number', 'number'})
 end
 
 local _l_table = 2 + debug.getinfo(1).currentline
-function testdata.fn_table(table) -- luacheck: no unused args
+function testdata.fn_table(_table)
     checks({mykey = 'number'})
 end
 
 local _l_inception = 2 + debug.getinfo(1).currentline
-function testdata.fn_inception(options) -- luacheck: no unused args
+function testdata.fn_inception(_options)
     checks({
         we = {
             need = {
@@ -90,27 +90,27 @@ local function deepchecks()
 end
 
 local _l_deepcheck = 2 + debug.getinfo(1).currentline
-function testdata.fn_deepcheck(arg1) -- luacheck: no unused args
+function testdata.fn_deepcheck(_arg1)
     deepchecks()
 end
 
 local _l_excess_checks = 2 + debug.getinfo(1).currentline
-function testdata.fn_excess_checks(arg1) -- luacheck: no unused args
+function testdata.fn_excess_checks(_arg1)
     checks('?number', '?string')
 end
 
 local _l_missing_checks = 2 + debug.getinfo(1).currentline
-function testdata.fn_missing_checks(arg1, arg2) -- luacheck: no unused args
+function testdata.fn_missing_checks(_arg1, _arg2)
     checks('?number')
 end
 
 local _l_bad_check_type_1 = 2 + debug.getinfo(1).currentline
-function testdata.bad_check_type_1(arg1, arg2) -- luacheck: no unused args
+function testdata.bad_check_type_1(_arg1, _arg2)
     checks("?string", 5)
 end
 
 local _l_bad_check_type_2 = 2 + debug.getinfo(1).currentline
-function testdata.bad_check_type_2(arg1, arg2) -- luacheck: no unused args
+function testdata.bad_check_type_2(_arg1, _arg2)
     checks({param = 5})
 end
 
@@ -294,12 +294,12 @@ local err_cases = {
     {
         code = 'fn_options({mynumber = "bad"})',
         line = _l_options,
-        error = 'bad argument options.mynumber to fn_options (?number expected, got string)',
+        error = 'bad argument _options.mynumber to fn_options (?number expected, got string)',
     },
     {
         code = 'fn_options({badfield = "bad"})',
         line = _l_options,
-        error = 'unexpected argument options.badfield to fn_options',
+        error = 'unexpected argument _options.badfield to fn_options',
     },
 
     -- fn_array
@@ -311,32 +311,32 @@ local err_cases = {
     {
         code = 'fn_array()',
         line = _l_array,
-        error = 'bad argument array[1] to fn_array (number expected, got nil)',
+        error = 'bad argument _array[1] to fn_array (number expected, got nil)',
     },
     {
         code = 'fn_array(nil)',
         line = _l_array,
-        error = 'bad argument array[1] to fn_array (number expected, got nil)',
+        error = 'bad argument _array[1] to fn_array (number expected, got nil)',
     },
     {
         code = 'fn_array(box.NULL)',
         line = _l_array,
-        error = 'bad argument array[1] to fn_array (number expected, got nil)',
+        error = 'bad argument _array[1] to fn_array (number expected, got nil)',
     },
     {
         code = 'fn_array({})',
         line = _l_array,
-        error = 'bad argument array[1] to fn_array (number expected, got nil)',
+        error = 'bad argument _array[1] to fn_array (number expected, got nil)',
     },
     {
         code = 'fn_array({"str1"})',
         line = _l_array,
-        error = 'bad argument array[1] to fn_array (number expected, got string)',
+        error = 'bad argument _array[1] to fn_array (number expected, got string)',
     },
     {
         code = 'fn_array({1})',
         line = _l_array,
-        error = 'bad argument array[2] to fn_array (number expected, got nil)',
+        error = 'bad argument _array[2] to fn_array (number expected, got nil)',
     },
     {
         code = 'fn_array({1, 2})',
@@ -344,7 +344,7 @@ local err_cases = {
     {
         code = 'fn_array({1, 2, 3})',
         line = _l_array,
-        error = 'unexpected argument array[3] to fn_array',
+        error = 'unexpected argument _array[3] to fn_array',
     },
 
     -- fn_table
@@ -356,17 +356,17 @@ local err_cases = {
     {
         code = 'fn_table()',
         line = _l_table,
-        error = 'bad argument table.mykey to fn_table (number expected, got nil)',
+        error = 'bad argument _table.mykey to fn_table (number expected, got nil)',
     },
     {
         code = 'fn_table({})',
         line = _l_table,
-        error = 'bad argument table.mykey to fn_table (number expected, got nil)',
+        error = 'bad argument _table.mykey to fn_table (number expected, got nil)',
     },
     {
         code = 'fn_table({mykey = "str"})',
         line = _l_table,
-        error = 'bad argument table.mykey to fn_table (number expected, got string)',
+        error = 'bad argument _table.mykey to fn_table (number expected, got string)',
     },
     {
         code = 'fn_table({mykey = 0})',
@@ -374,7 +374,7 @@ local err_cases = {
     {
         code = 'fn_table({mykey = 0, excess = 1})',
         line = _l_table,
-        error = 'unexpected argument table.excess to fn_table',
+        error = 'unexpected argument _table.excess to fn_table',
     },
 
     -- fn_inception
@@ -387,7 +387,7 @@ local err_cases = {
     {
         code = 'fn_inception({we = false})',
         line = _l_inception,
-        error = 'bad argument options.we to fn_inception (?table expected, got boolean)',
+        error = 'bad argument _options.we to fn_inception (?table expected, got boolean)',
     },
     {
         code = 'fn_inception({we = {}})',
@@ -407,7 +407,7 @@ local err_cases = {
     {
         code = 'fn_inception({we = {need = {to = {go = {deeper = {}}}}}})',
         line = _l_inception,
-        error = 'bad argument options.we.need.to.go.deeper to fn_inception (?number expected, got table)',
+        error = 'bad argument _options.we.need.to.go.deeper to fn_inception (?number expected, got table)',
     },
 
     -- fn_deepcheck
@@ -429,7 +429,7 @@ local err_cases = {
     {
         code = 'fn_missing_checks()',
         line = _l_missing_checks,
-        error = 'checks: argument "arg2" is not checked',
+        error = 'checks: argument "_arg2" is not checked',
     },
     {
         code = 'bad_check_type_1()',
@@ -583,34 +583,34 @@ for _, case in pairs(options_v2_cases) do
 end
 
 ------------------------------------------------------------------------------
-function testdata.fn_int64(arg) -- luacheck: no unused args
+function testdata.fn_int64(_arg)
     checks('int64')
 end
 
-function testdata.fn_uint64(arg) -- luacheck: no unused args
+function testdata.fn_uint64(_arg)
     checks('uint64')
 end
 
 local uuid = require('uuid')
 testdata.myid = uuid()
 
-function testdata.fn_uuid(arg) -- luacheck: no unused args
+function testdata.fn_uuid(_arg)
     checks('uuid')
 end
 
-function testdata.fn_uuid_str(arg) -- luacheck: no unused args
+function testdata.fn_uuid_str(_arg)
     checks('uuid_str')
 end
 
-function testdata.fn_uuid_bin(arg) -- luacheck: no unused args
+function testdata.fn_uuid_bin(_arg)
     checks('uuid_bin')
 end
 
-function testdata.fn_tuple(arg) -- luacheck: no unused args
+function testdata.fn_tuple(_arg)
     checks('tuple')
 end
 
-function testdata.fn_decimal(arg) -- luacheck: no unused args
+function testdata.fn_decimal(_arg)
     checks('decimal')
 end
 
@@ -619,13 +619,13 @@ if has_decimal then
     testdata.decimal = decimal
 end
 
-function testdata.fn_error(arg) -- luacheck: no unused args
+function testdata.fn_error(_arg)
     checks('error')
 end
 
 local has_error = (box.error ~= nil) and (box.error.new ~= nil)
 
-function testdata.fn_datetime(arg) -- luacheck: no unused args
+function testdata.fn_datetime(_arg)
     checks('datetime')
 end
 
@@ -634,7 +634,7 @@ if has_datetime then
     testdata.datetime = datetime
 end
 
-function testdata.fn_interval(arg) -- luacheck: no unused args
+function testdata.fn_interval(_arg)
     checks('interval')
 end
 
