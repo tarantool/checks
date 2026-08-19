@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Removed
 
+## [3.4.1] - 2026-08-19
+
+This release introduces EmmyLua annotations.
+
+### Added
+
+- Bring EmmyLua annotations (#68).
+
 ## [3.4.0] - 2025-10-21
 
 This release introduces bumped CMake version to avoid compatibility
