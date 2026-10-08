@@ -475,6 +475,38 @@ for _, case in pairs(err_cases) do
 end
 
 ------------------------------------------------------------------------------
+-- The function name is absent from debug info when a function is called from
+-- C (for example, via `pcall`) and the callable module forwards the arguments
+-- with a tail call. Such a name must be excluded from the error message.
+g.test_nil_function_name = function(_)
+    local function fn_string(_)
+        require('checks')('number')
+    end
+
+    local ok, err = pcall(fn_string, 'string')
+    t.assert_equals(ok, false)
+    t.assert_str_contains(err,
+        'bad argument #1 (number expected, got string)')
+
+    local function fn_table(_)
+        require('checks')({foo = 'number'})
+    end
+
+    ok, err = pcall(fn_table, {foo = 'string'})
+    t.assert_equals(ok, false)
+    t.assert_str_contains(err,
+        'bad argument _.foo (number expected, got string)')
+
+    local function fn_unexpected(_)
+        require('checks')({foo = '?number'})
+    end
+
+    ok, err = pcall(fn_unexpected, {bar = 1})
+    t.assert_equals(ok, false)
+    t.assert_str_contains(err, 'unexpected argument _.bar')
+end
+
+------------------------------------------------------------------------------
 local options_cases = {
     {
         args = nil,
