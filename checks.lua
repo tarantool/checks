@@ -134,7 +134,7 @@ local function check_string_type(value, expected_type)
 
     -- 5. Nothing works, return an error
     return nil, string.format(
-        'bad argument %s to %s (%s expected, got %s)',
+        'bad argument %s%s (%s expected, got %s)',
         -- argname and function name are formatted by the caller
         '%s', '%s', expected_type, type(value)
     )
@@ -207,7 +207,7 @@ local function check_table_type(tbl, expected_fields)
     for key, _ in pairs(tbl) do
         if not expected_fields[key] then
             return nil, string.format(
-                'unexpected argument %s to %s',
+                'unexpected argument %s%s',
                 -- argname and function name
                 -- are formatted by the caller
                 '%s'..keyname_fmt(key), '%s'
@@ -216,6 +216,21 @@ local function check_table_type(tbl, expected_fields)
     end
 
     return true
+end
+
+---Format the function name part of an error message. The name is unknown for
+---functions without a statically-resolved name (for example, those called via
+---`pcall` or through a callable table), in which case the part is omitted.
+---
+---@param name string? The function name reported by `debug.getinfo`.
+---@return string The formatted function name part, e.g. ` to my_function`,
+---    or an empty string when the name is unknown.
+local function funcname_part(name)
+    if name == nil then
+        return ''
+    end
+
+    return string.format(' to %s', name)
 end
 
 ---Checks that the arguments of the calling function conform to the specified
@@ -263,7 +278,8 @@ local function checks(...)
             if not ok then
                 local info = debug.getinfo(level, 'nl')
                 ---@cast efmt string
-                local err = string.format(efmt, '#'..tostring(i), info.name)
+                local err = string.format(efmt, '#'..tostring(i),
+                                          funcname_part(info.name))
                 error(err, level)
             end
 
@@ -272,7 +288,8 @@ local function checks(...)
             if not ok then
                 local info = debug.getinfo(level, 'nl')
                 ---@cast efmt string
-                local err = string.format(efmt, '#'..tostring(i), info.name)
+                local err = string.format(efmt, '#'..tostring(i),
+                                          funcname_part(info.name))
                 error(err, level)
             end
 
@@ -288,7 +305,8 @@ local function checks(...)
             if not ok then
                 local info = debug.getinfo(level, 'nl')
                 ---@cast efmt string
-                local err = string.format(efmt, argname, info.name)
+                local err = string.format(efmt, argname,
+                                          funcname_part(info.name))
                 error(err, level)
             end
         else
