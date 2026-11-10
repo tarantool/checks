@@ -1,0 +1,348 @@
+---**Since:** 2.11.0
+---
+---The `checks` module provides the ability to check the types of arguments passed to a Lua function. You need to call the `checks(type_1, ...)` function inside the target Lua function and pass one or more type qualifiers to check the corresponding argument types. There are two types of type qualifiers:
+---
+---- A string type qualifier checks whether a function's argument conforms to the specified type. Example: `'string'`.
+---
+---- A table type qualifier checks whether the values of a table passed as an argument conform to the specified types. Example: `{ 'string', 'number' }`.
+---
+---Note
+---
+---For earlier versions, you can install the `checks` module from the [Tarantool rocks repository](https://www.tarantool.io/en/download/rocks).
+---
+---
+---
+---**Loading checks**
+---
+---In Tarantool 2.11.0 and later versions, the checks API is available in a script without loading the module.
+---
+---For earlier versions, you need to install the `checks` module from the Tarantool rocks repository and load the module using the `require()` directive:
+---
+---```
+---local checks = require('checks')
+---```
+---
+---
+---
+---**Number of arguments to check**
+---
+---For each argument to check, you need to specify its own type qualifier in the `checks(type_1, ...)` function.
+---
+---
+---
+---**One argument**
+---
+---In the example below, the `checks` function accepts a `string` type qualifier to verify that only a string value can be passed to the `greet` function. Otherwise, an error is raised.
+---
+---```
+---function greet(name)
+---    checks('string')
+---    return 'Hello, ' .. name
+---end
+-----[[
+---greet('John')
+----- returns 'Hello, John'
+---
+---greet(123)
+----- raises an error: bad argument #1 to nil (string expected, got number)
+-----]]
+---```
+---
+---
+---
+---**Multiple arguments**
+---
+---To check the types of several arguments, you need to pass the corresponding type qualifiers to the `checks` function. In the example below, both arguments should be string values.
+---
+---```
+---function greet_fullname(firstname, lastname)
+---    checks('string', 'string')
+---    return 'Hello, ' .. firstname .. ' ' .. lastname
+---end
+-----[[
+---greet_fullname('John', 'Smith')
+----- returns 'Hello, John Smith'
+---
+---greet_fullname('John', 1)
+----- raises an error: bad argument #2 to nil (string expected, got number)
+-----]]
+---```
+---
+---To skip checking specific arguments, use the ? placeholder.
+---
+---
+---
+---**Variable number of arguments**
+---
+---You can check the types of explicitly specified arguments for functions that accept a variable number of arguments.
+---
+---```
+---function extra_arguments_num(a, b, ...)
+---    checks('string', 'number')
+---    return select('#', ...)
+---end
+-----[[
+---extra_arguments_num('a', 2, 'c')
+----- returns 1
+---
+---extra_arguments_num('a', 'b', 'c')
+----- raises an error: bad argument #1 to nil (string expected, got number)
+-----]]
+---```
+---
+---
+---
+---**String type qualifier**
+---
+---This section describes how to check a specific argument type using a string type qualifier:
+---
+---- The Supported types section describes all the types supported by the `checks` module.
+---
+---- If required, you can make a union type to allow an argument to accept several types.
+---
+---- You can make any of the supported types optional.
+---
+---- To skip checking specific arguments, use the ? placeholder.
+---
+---
+---
+---**Supported types**
+---
+---
+---
+---**Lua types**
+---
+---A string type qualifier can accept any of the [Lua types](https://www.lua.org/pil/2.html), for example, `string`, `number`, `table`, or `nil`. In the example below, the `checks` function accepts `string` to validate that only a string value can be passed to the `greet` function.
+---
+---```
+---function greet(name)
+---    checks('string')
+---    return 'Hello, ' .. name
+---end
+-----[[
+---greet('John')
+----- returns 'Hello, John'
+---
+---greet(123)
+----- raises an error: bad argument #1 to nil (string expected, got number)
+-----]]
+---```
+---
+---
+---
+---**Tarantool types**
+---
+---You can use Tarantool-specific types in a string qualifier. The example below shows how to check that a function argument is a decimal value.
+---
+---```
+---local decimal = require('decimal')
+---function sqrt(value)
+---    checks('decimal')
+---    return decimal.sqrt(value)
+---end
+-----[[
+---sqrt(decimal.new(16))
+----- returns 4
+---
+---sqrt(16)
+----- raises an error: bad argument #1 to nil (decimal expected, got number)
+-----]]
+---```
+---
+---This table lists all the checks available for Tarantool types:
+---
+---| Check | Description | See also |
+---| --- | --- | --- |
+---| `checks('datetime')` | Check whether the specified value is datetime_object | checkers.datetime(value) |
+---| `checks('decimal')` | Check whether the specified value has the decimal type | checkers.decimal(value) |
+---| `checks('error')` | Check whether the specified value is error_object | checkers.error(value) |
+---| `checks('int64')` | Check whether the specified value is an `int64` value | checkers.int64(value) |
+---| `checks('interval')` | Check whether the specified value is interval_object | checkers.interval(value) |
+---| `checks('tuple')` | Check whether the specified value is a tuple | checkers.tuple(value) |
+---| `checks('uint64')` | Check whether the specified value is a `uint64` value | checkers.uint64(value) |
+---| `checks('uuid')` | Check whether the specified value is uuid_object | checkers.uuid(value) |
+---| `checks('uuid_bin')` | Check whether the specified value is uuid represented by a 16-byte binary string | checkers.uuid_bin(value) |
+---| `checks('uuid_str')` | Check whether the specified value is uuid represented by a 36-byte hexadecimal string | checkers.uuid_str(value) |
+---
+---
+---
+---**Custom function**
+---
+---A string type qualifier can accept the name of a custom function that performs arbitrary validations. To achieve this, create a function returning `true` if the value is valid and add this function to the checkers table.
+---
+---The example below shows how to use the `positive` function to check that an argument value is a positive number.
+---
+---```
+---function checkers.positive(value)
+---    return (type(value) == 'number') and (value > 0)
+---end
+---
+---function get_doubled_number(value)
+---    checks('positive')
+---    return value * 2
+---end
+-----[[
+---get_doubled_number(10)
+----- returns 20
+---
+---get_doubled_number(-5)
+----- raises an error: bad argument #1 to nil (positive expected, got number)
+-----]]
+---```
+---
+---
+---
+---**Metatable type**
+---
+---A string qualifier can accept a value stored in the `__type` field of the argument [metatable](https://www.lua.org/pil/13.html).
+---
+---```
+---local blue = setmetatable({ 0, 0, 255 }, { __type = 'color' })
+---function get_blue_value(color)
+---    checks('color')
+---    return color[3]
+---end
+-----[[
+---get_blue_value(blue)
+----- returns 255
+---
+---get_blue_value({0, 0, 255})
+----- raises an error: bad argument #1 to nil (color expected, got table)
+-----]]
+---```
+---
+---
+---
+---**Union types**
+---
+---To allow an argument to accept several types (a union type), concatenate type names with a pipe (`|`). In the example below, the argument can be both a `number` and `string` value.
+---
+---```
+---function get_argument_type(value)
+---    checks('number|string')
+---    return type(value)
+---end
+-----[[
+---get_argument_type(1)
+----- returns 'number'
+---
+---get_argument_type('key1')
+----- returns 'string'
+---
+---get_argument_type(true)
+----- raises an error: bad argument #1 to nil (number|string expected, got boolean)
+-----]]
+---```
+---
+---
+---
+---**Optional types**
+---
+---To make any of the supported types optional, prefix its name with a question mark (`?`). In the example below, the `name` argument is optional. This means that the `greet` function can accept `string` and `nil` values.
+---
+---```
+---function greet(name)
+---    checks('?string')
+---    if name ~= nil then
+---        return 'Hello, ' .. name
+---    else
+---        return 'Hello from Tarantool'
+---    end
+---end
+-----[[
+---greet('John')
+----- returns 'Hello, John'
+---
+---greet()
+----- returns 'Hello from Tarantool'
+---
+---greet(123)
+----- raises an error: bad argument #1 to nil (string expected, got number)
+-----]]
+---```
+---
+---As for a specific type, you can make a union type value optional: `?number|string`.
+---
+---
+---
+---**Skipping argument checking**
+---
+---You can skip checking of the specified arguments using the question mark (`?`) placeholder. In this case, the argument can be any type.
+---
+---```
+---function greet_fullname_any(firstname, lastname)
+---    checks('string', '?')
+---    return 'Hello, ' .. firstname .. ' ' .. tostring(lastname)
+---end
+-----[[
+---greet_fullname_any('John', 'Doe')
+----- returns 'Hello, John Doe'
+---
+---greet_fullname_any('John', 1)
+----- returns 'Hello, John 1'
+-----]]
+---```
+---
+---
+---
+---**Table type qualifier**
+---
+---A table type qualifier checks whether the values of a table passed as an argument conform to the specified types. In this case, the following checks are made:
+---
+---- The argument is checked to conform to the `?table` type, and its content is validated.
+---
+---- Table values are validated against the specified string type qualifiers.
+---
+---- Table keys missing in `checks` are validated against the `nil` type.
+---
+---The code below checks that the first and second table values have the `string` and `number` types.
+---
+---```
+---function configure_connection(options)
+---    checks({ 'string', 'number' })
+---    local ip_address = options[1] or '127.0.0.1'
+---    local port = options[2] or 3301
+---    return ip_address .. ':' .. port
+---end
+-----[[
+---configure_connection({'0.0.0.0', 3303})
+----- returns '0.0.0.0:3303'
+---
+---configure_connection({'0.0.0.0', '3303'})
+----- raises an error: bad argument options[2] to nil (number expected, got string)
+-----]]
+---```
+---
+---In the next example, the same checks are made for the specified keys.
+---
+---```
+---function configure_connection_opts(options)
+---    checks({ ip_address = 'string', port = 'number' })
+---    local ip_address = options.ip_address or '127.0.0.1'
+---    local port = options.port or 3301
+---    return ip_address .. ':' .. port
+---end
+-----[[
+---configure_connection_opts({ip_address = '0.0.0.0', port = 3303})
+----- returns '0.0.0.0:3303'
+---
+---configure_connection_opts({ip_address = '0.0.0.0', port = '3303'})
+----- raises an error: bad argument options.port to nil (number expected, got string)
+---
+---configure_connection_opts({login = 'testuser', ip_address = '0.0.0.0', port = 3303})
+----- raises an error: unexpected argument options.login to nil
+-----]]
+---```
+---
+---Note
+---
+---Table qualifiers can be nested and use tables, too.
+---
+local checks = {}
+
+---Checks that the arguments of the calling function conform to the specified types.
+---
+---@param ... checks.qualifier|number Type qualifiers, one per argument to check.
+function checks.checks(...) end
+
+return checks
