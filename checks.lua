@@ -1,11 +1,3 @@
----The `checks` module provides the ability to check the types of arguments
----passed to a Lua function. It is designed to reveal mistakes in code, not to
----validate user input.
----
----The returned module table is callable: `checks(type_1, ...)` is equivalent
----to `checks.checks(type_1, ...)`. It exposes the `checks` function and the
----`_VERSION` string field.
----
 ---@alias checks.qualifier string|table<any, checks.qualifier>
 local ffi = require('ffi')
 
@@ -27,6 +19,7 @@ local _qualifiers_cache = {
     -- },
 }
 
+---@private
 ---Check that the given string (or substring) starts with the given string,
 ---optionally restricting the matching with the given offsets.
 ---
@@ -78,6 +71,7 @@ local function startswith(inp, head, _start, _end)
 end
 
 
+---@private
 ---Check that a value conforms to the given string type qualifier.
 ---
 ---@param value any The value to check.
@@ -140,6 +134,7 @@ local function check_string_type(value, expected_type)
     )
 end
 
+---@private
 ---Format a table key for an error message: `.key` for strings and `[n]`
 ---for numbers.
 ---
@@ -155,6 +150,7 @@ local function keyname_fmt(key)
     end
 end
 
+---@private
 ---Check that a table conforms to the given table type qualifier.
 ---
 ---@param tbl table? The table to check.
@@ -340,6 +336,7 @@ rawset(_G, 'checks', checks)
 local checkers = rawget(_G, 'checkers') or {}
 rawset(_G, 'checkers', checkers)
 
+---@private
 ---When set to `true`, substitutes `nil` table arguments with empty tables for
 ---backward compatibility with v2.1.
 ---@type boolean
@@ -414,6 +411,7 @@ if has_decimal then
     end
 end
 
+---@private
 ---Register a checker for a cdata type checked via FFI.
 ---
 ---@param checks_type string The name of the checker to register in `checkers`.
